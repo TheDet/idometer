@@ -23,7 +23,7 @@ class Persistence {
     <descr>{task.descr}</descr>
     <estimated>{task.estimatedTime.milisec}</estimated>
     <finished>{task.finished}</finished>
-    /task> 
+    </task> 
   
   def activityToXml(act:Activity) = 
     <activity>
