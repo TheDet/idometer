@@ -3,7 +3,7 @@ package de.velopmind.idometer
 import java.util.Date
 
 /*
- * The model for the TimeControl application consists of a repository maintaining
+ * The model for the I-do-Meter application consists of a repository maintaining
  * a set of tasks, where each task represents a topic to work on.
  *
  * Each time span during the day is consumed by one task.
@@ -17,21 +17,22 @@ import java.util.Date
  Starting to work on a task stops other running tasks.
 */
 case class Task(id:String, 
-	      	        descr:String,
-		              estimatedTime:Duration,
-                  consumedTime:Duration = Duration(0),  
-                  activities:List[Activity] = Nil,
-                  finished:Boolean = false
-		   ) 
+                descr:String,
+                estimatedTime:Duration,
+                consumedTime:Duration = Duration(0),
+                activities:List[Activity] = Nil,
+                finished:Boolean = false
+               ) 
 {
-	  implicit def timespan(milisec:Long) = Duration(milisec)  
+    implicit def timespan(milisec:Long) = Duration(milisec)  
 //	def consume(start:Long, stop:Long):Task = copy(consumedTime = (this.consumedTime + (stop - start)))
 //	def consume(start:Date, stop:Date):Task = consume(start.getTime , stop.getTime )
     def consume(activity:Activity) = {
       copy(  consumedTime = (consumedTime + activity.duration),
-             activities = activity :: this.activities)
+             activities   = activity :: this.activities          )
     }
-	  def finish = copy(finished = true)
+    
+    def finish = copy(finished = true)
 }
 
 /** 
@@ -44,10 +45,10 @@ case class Task(id:String,
  * what has been done during the period of this activity.
  */
 case class Activity (taskid:String,
-                        start:Date = Timestamp(),
-                        stop:Option[Date] = None,
-                        descr:String = ""
-                       )     
+                     start:Date = Timestamp(),
+                     stop:Option[Date] = None,
+                     descr:String = ""
+                    )     
 {
     def comment(mesg:String) = copy(descr = mesg)
     def finish = copy(stop = Some(Timestamp()))
@@ -67,10 +68,10 @@ case class Activity (taskid:String,
  * The representations 'asHours' and 'asMinutes' are rounded down 
 */
 case class Duration (milisec:Long=0) {
-	def asHours          = ((milisec / 1000) / 3600) 
-	def asMinutes        = ((milisec / 1000) / 60)
-	def asTime           = ""+asHours+":"+(asMinutes - asHours * 60)
-	def +(that:Duration) = Duration(this.milisec + that.milisec)
+    def asHours          = ((milisec / 1000) / 3600) 
+    def asMinutes        = ((milisec / 1000) / 60)
+    def asTime           = ""+asHours+":"+(asMinutes - asHours * 60)
+    def +(that:Duration) = Duration(this.milisec + that.milisec)
 }
 
 /**
@@ -78,11 +79,11 @@ case class Duration (milisec:Long=0) {
  *declare time intervals in the source code.
  */
 class Time(value:Long) {
-	def h = value * 3600 * 1000
+    def h = value * 3600 * 1000
 }
 
 object Time {
-	implicit def longToTime(value:Long) = new Time(value)
+    implicit def longToTime(value:Long) = new Time(value)
 }
 
 /** This object hides the creation of Date instances and allows
@@ -99,29 +100,30 @@ object Timestamp {
  * The repository maintains the data model of tasks and activities
  */
 class Repository {
-	var allTasks                 = Map[String, Task]()   // Or should it be a List ??
-	var allActivities           = List[Activity]()
-	var currentTask:Option[Task] = None
-	var currentActivity:Option[Activity] = None
+    var allTasks                 = Map[String, Task]()   // Or should it be a List ??
+    var allActivities           = List[Activity]()
+    var currentTask:Option[Task] = None
+    var currentActivity:Option[Activity] = None
 
-	def addTask(t:Task)      { allTasks += (t.id -> t) }
-	def makeCurrent(t:Task) { currentTask = Some(t) }
-	def startCurrent()       { currentActivity = currentTask match {
-      case Some(t) => Some(Activity(t.id, Timestamp())) 
-      case None    => None
-    }
+    def addTask(t:Task)     { allTasks += (t.id -> t) }
+    def makeCurrent(t:Task) { currentTask = Some(t) }
+    def startCurrent()      { currentActivity = currentTask match {
+                                case Some(t) => Some(Activity(t.id, Timestamp())) 
+                                case None    => None
+                              }
     //for ( act <- currentActivity) { allActivities +:= act}
-  }
-	def stopCurrent(mesg:String = "")       {
-	    for (ca <- currentActivity) {
-        val fa = ca.comment(mesg).finish
-        allActivities +:= fa
+    }
+    
+    def stopCurrent(mesg:String = "")       {
+        for (ca <- currentActivity) {
+            val fa = ca.comment(mesg).finish
+            allActivities +:= fa
 //     for (ct  <- currentTask;	 ca <- currentActivity;  val fa = ca.comment(mesg).finish) {
 //	        currentTask = Some(ct.consume(ca.comment(mesg).finish))
 //	        allTasks += (currentTask.get.id -> currentTask.get)
-	    }
-      currentActivity = None
-      //currentTask      = None
 	}
+        currentActivity = None
+      //currentTask      = None
+    }
 }
 
