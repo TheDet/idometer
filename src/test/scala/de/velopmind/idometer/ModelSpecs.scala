@@ -31,7 +31,7 @@ class DurationSpec  extends FlatSpec with ShouldMatchers  {
 
 @RunWith( classOf[JUnitRunner])
 class TimeSpec  extends FlatSpec with ShouldMatchers  {
-	import de.velopmind.timecontrol.Time._
+	import de.velopmind.idometer.Time._
 	"Time" should "represent long number as hours" in {
         val time = 5.h
 		time should equal ( 5 * 60 * 60 * 1000)
@@ -40,7 +40,7 @@ class TimeSpec  extends FlatSpec with ShouldMatchers  {
 
 @RunWith( classOf[JUnitRunner])
 class TimestampSpec  extends FlatSpec with ShouldMatchers  {
-	import de.velopmind.timecontrol.Timestamp
+	import de.velopmind.idometer.Timestamp
 	"Timestamp" should "return current date" in {
       val time = Timestamp()
 		  //time should equal ( 5 * 60 * 60 * 1000)
@@ -124,7 +124,7 @@ class ActivitySpec  extends FlatSpec with ShouldMatchers  {
 
 @RunWith( classOf[JUnitRunner])
 class TaskSpec  extends FlatSpec with ShouldMatchers  {
-	import de.velopmind.timecontrol.Time._
+	import de.velopmind.idometer.Time._
 	"A Task" should "be initialised with default values" in {
 	    	val task = Task("1", "first", Duration(5.h))
         task.id            should be ("1")
@@ -144,7 +144,7 @@ class TaskSpec  extends FlatSpec with ShouldMatchers  {
 
 @RunWith( classOf[JUnitRunner])
 class RepositorySpec   extends FlatSpec with ShouldMatchers  {
-	import de.velopmind.timecontrol.Time._
+	import de.velopmind.idometer.Time._
 	"The Repository" should "accept Tasks" in {
 		val (one, two, three) = (Task("1", "one",   Duration(1.h)),
 				                 Task("2", "two",   Duration(2.h)),
