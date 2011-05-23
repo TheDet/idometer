@@ -3,8 +3,8 @@
             <minimum-ant-version>1.6.5</minimum-ant-version>
             <source-roots>
                 <root id="src.dir"></root>
-                <root name="Resources" id="resources.dir"></root>      
-                <root name="Configuration" id="sources.sbt.project"></root>                
+                <root name="Resources" id="resources.dir"></root>
+                <root name="Configuration" id="sources.sbt.project"></root>
             </source-roots>
             <test-roots>
                 <root id="test.src.dir"></root>

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2011 Dirk Detering <mailtodet@googlemail.com>.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.velopmind.idometer
 
 import org.scalatest.FlatSpec
@@ -50,20 +66,20 @@ class TimestampSpec  extends FlatSpec with ShouldMatchers  {
     //time should equal ( 5 * 60 * 60 * 1000)
     }
     it should "use set factory" in {
-      import java.text.SimpleDateFormat
-      val longvalue = new SimpleDateFormat("dd.mm.yyyy").parse("03.04.2011").getTime
-      val defaultfactory = Timestamp.defaultfactory
-      Timestamp.datefactory should be (defaultfactory)
-      Timestamp.datefactory = () => new Date(longvalue)
+        import java.text.SimpleDateFormat
+        val longvalue = new SimpleDateFormat("dd.mm.yyyy").parse("03.04.2011").getTime
+        val defaultfactory = Timestamp.defaultfactory
+        Timestamp.datefactory should be (defaultfactory)
+        Timestamp.datefactory = () => new Date(longvalue)
       
-      val fixtime = Timestamp()
-      val fixtimed = Timestamp.date
-      val fixtimelong = Timestamp.time
+        val fixtime = Timestamp()
+        val fixtimed = Timestamp.date
+        val fixtimelong = Timestamp.time
       
-      fixtime should equal (fixtimed)
-      fixtime.getTime should equal (fixtimelong)
-      fixtimelong should equal (longvalue)
-      //time should equal ( 5 * 60 * 60 * 1000)
+        fixtime should equal (fixtimed)
+        fixtime.getTime should equal (fixtimelong)
+        fixtimelong should equal (longvalue)
+        //time should equal ( 5 * 60 * 60 * 1000)
     }
 }
 
@@ -71,7 +87,7 @@ class TimestampSpec  extends FlatSpec with ShouldMatchers  {
 @RunWith( classOf[JUnitRunner])
 class ActivitySpec  extends FlatSpec with ShouldMatchers  {
     "An Activity " should "start" in {
-    val activity = Activity("test", new Date(1000000L))
+        val activity = Activity("test", new Date(1000000L))
         activity.start should equal (new Date(1000000L))
         activity.stop  should be (None)
         activity.descr should be ("")
@@ -147,29 +163,29 @@ class RepositorySpec   extends FlatSpec with ShouldMatchers  {
     import de.velopmind.idometer.Time._
     "The Repository" should "accept Tasks" in {
         val (one, two, three) = (Task("1", "one",   Duration(1.h)),
-                         Task("2", "two",   Duration(2.h)),
-                         Task("3", "three", Duration(3.h)))
-    val repo = new Repository                                 
-    repo.addTask( one )
-    repo.addTask( two )
-    repo.addTask( three )
+                                 Task("2", "two",   Duration(2.h)),
+                                 Task("3", "three", Duration(3.h)))
+        val repo = new Repository                                 
+        repo.addTask( one )
+        repo.addTask( two )
+        repo.addTask( three )
         
-    repo.allTasks.size should equal (3) 
+        repo.allTasks.size should equal (3) 
     }
     it should "make Task current" in {
-    val (one, two, three) = (Task("1", "one",   Duration(1.h)),
-                         Task("2", "two",   Duration(2.h)),
-                         Task("3", "three", Duration(3.h)))
-    val repo = new Repository                                 
-    repo.addTask( one )
-    repo.addTask( two )
-    repo.addTask( three )
+        val (one, two, three) = (Task("1", "one",   Duration(1.h)),
+                                 Task("2", "two",   Duration(2.h)),
+                                 Task("3", "three", Duration(3.h)))
+        val repo = new Repository                                 
+        repo.addTask( one )
+        repo.addTask( two )
+        repo.addTask( three )
         
-    repo.makeCurrent( two )
-    repo.currentTask.get should equal ( two ) 
-
-    repo.makeCurrent( three )
-    repo.currentTask.get should equal ( three ) 
+        repo.makeCurrent( two )
+        repo.currentTask.get should equal ( two ) 
+    
+        repo.makeCurrent( three )
+        repo.currentTask.get should equal ( three ) 
     }
 
     it should "start and stop current Task" in {
@@ -191,28 +207,28 @@ class RepositorySpec   extends FlatSpec with ShouldMatchers  {
         }
     
         implicit val testdate = "20110403"
-    val one = Task("1", "one", Duration(1.h))
-    val repo = new Repository                                 
-    repo.addTask( one )
-    repo.makeCurrent( one )
+        val one = Task("1", "one", Duration(1.h))
+        val repo = new Repository                                 
+        repo.addTask( one )
+        repo.makeCurrent( one )
         mockdate("10:32:05")
-    repo.startCurrent()
-    repo.allActivities.size should equal (0)
+        repo.startCurrent()
+        repo.allActivities.size should equal (0)
         val act = repo.currentActivity
         act should not equal (None)
         checkactivity(act.get, "1", "", createdate("10:32:05"), None) //TODO : further verify act !
-    mockdate("10:33:35")
-    repo.stopCurrent("stopit")
+        mockdate("10:33:35")
+        repo.stopCurrent("stopit")
     
-    repo.allActivities.size should equal (1)
+        repo.allActivities.size should equal (1)
         checkactivity(repo.allActivities(0), "1", "stopit", createdate("10:32:05") , Some(createdate("10:33:35")))    
 
         mockdate("10:42:42")
-    repo.startCurrent()
-    mockdate("10:46:42")
-    repo.stopCurrent("stopagain")
+        repo.startCurrent()
+        mockdate("10:46:42")
+        repo.stopCurrent("stopagain")
 
-    repo.allActivities.size should equal (2)
+        repo.allActivities.size should equal (2)
         checkactivity(repo.allActivities(1), "1", "stopit", createdate("10:32:05") , Some(createdate("10:33:35")))    
         checkactivity(repo.allActivities(0), "1", "stopagain", createdate("10:42:42"), Some(createdate("10:46:42")))    
 

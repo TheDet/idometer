@@ -1,21 +1,21 @@
 <project default="default" basedir="." name="idometer">
     <description>Builds, tests, and runs the project sbt-netbeans-plugin.</description>
-    <import file="nbproject/build-impl.xml"></import><target name="clean" description="Clean build products."><exec executable="sbt" dir="">
+    <target description="Clean build products." name="clean"><exec executable="sbt" dir="">
             <arg value="clean"></arg>
         </exec>
     </target>
 
-    <target name="jar" description="Build JAR."><exec executable="sbt" dir="">
+    <target description="Build JAR." name="jar"><exec executable="sbt" dir="">
             <arg value=";package;package-src"></arg>
         </exec>
     </target>
 
-    <target name="compile" description="Compile project."><exec executable="sbt" dir="">
+    <target description="Compile project." name="compile"><exec executable="sbt" dir="">
             <arg value="compile"></arg>
         </exec>
     </target>
 
-    <target name="test" description="Run unit tests."><exec executable="sbt" dir="">
+    <target description="Run unit tests." name="test"><exec executable="sbt" dir="">
             <arg value="test"></arg>
         </exec>
     </target>
