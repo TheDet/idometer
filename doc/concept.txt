@@ -1,0 +1,45 @@
+Most of the concept can  be found in the Specs tests
+
+Notes about open issues:
+
+- Shall an activity know its task? 
+
+Would be useful, as we could get a list of activities in date order
+and determine the chronology of tasks.
+Also it would be easier to filter activities by time span and get
+the task sums for them.
+
+- Shall the repository store activities instead of tasks?
+
+Like before, that would allow for different sorting and summing up of
+activities.
+
+- What about the open (current) activity and task, when saving the Repo.
+  Shall the activity be stopped (finished) before saving, or shall the state be stored?
+  What about the current task? Shall that be stored, or is reloading the Repo
+  assumed to create some sort of initial state?
+
+=============================================
+
+CONCEPT:
+
+* The list of tasks contains one instance for each possible task
+* Create a new task by constructing and adding to the repo's task list
+* A task can be "current", which means, that an activity is dedicated to this task
+* Each "start" creates an activity which contains the ID of a task
+* Each "stop" stops an activity, "finishes" it, and adds it to the list
+  of all activities.
+
+* The list of all activities is a chronology of actions.
+* For reporting, a subset of all-activities can be selected
+* For reporting, a task can "consume" a set of activities, i.e.
+  a new task (copy) is created, which contains the sum of durations
+  of the given activities as its duration (for reporting period).
+
+* Thus, consuming is only done in the moment of report creation, not
+  immediately when booking activities.
+
+
+STATE MACHINE:
+
+NoTask -> Task selected -> Task started -> Task stopped ->  OtherTask selected

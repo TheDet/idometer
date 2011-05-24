@@ -83,6 +83,7 @@ case class Duration (milisec:Long=0) {
     def asMinutes        = ((milisec / 1000) / 60)
     def asTime           = ""+asHours+":"+(asMinutes - asHours * 60)
     def +(that:Duration) = Duration(this.milisec + that.milisec)
+    def toLong           = milisec
 }
 
 /**
@@ -113,13 +114,13 @@ object Timestamp {
  */
 class Repository {
     var allTasks                 = Map[String, Task]()   // Or should it be a List ??
-    var allActivities            = List[Activity]()
+    var allActivities            = List[Activity]()      // contains only finished activities
     var currentTask:Option[Task] = None
-    var currentActivity:Option[Activity] = None
+    var currentActivity:Option[Activity] = None          // contains the currently open activity (unfinished)
 
     
 
-    // The following methods build a "Task control language"
+    // The following methods build a basic "Task control language"
 
     def addTask(t:Task)     { allTasks += (t.id -> t) }
 
@@ -130,10 +131,9 @@ class Repository {
                               }
     }
     
-    def stopCurrent(mesg:String = "")       {
+    def stopCurrent(mesg:String = "") {
         for (ca <- currentActivity) {
-            val fa = ca.comment(mesg).finish
-            allActivities +:= fa
+            allActivities +:= ca.comment(mesg).finish
         }
         currentActivity = None
     }

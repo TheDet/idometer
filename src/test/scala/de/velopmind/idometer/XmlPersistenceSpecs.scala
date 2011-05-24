@@ -28,73 +28,114 @@ import de.velopmind.idometer._
 @RunWith( classOf[JUnitRunner])
 class PersistenceSpec  extends FlatSpec with ShouldMatchers  {
     import de.velopmind.idometer.Time._
+    import TimestampTestUtil._    
     "A persistence" should "marshal and unmarshal an activity" in {
-        val act = Activity("1", new Date(), Some(new Date()), "actOne")
-        val persist = new Persistence()
-        val xml = persist.activityToXml(act)
-        val actagain = persist.xmlToActivity(xml)
-         
-        act should equal (actagain)   
+        def validate(act:Activity) {
+          val persist = new Persistence()
+          val xml = persist.activityToXml(act)
+          val actagain = persist.xmlToActivity(xml)
+
+          act should equal (actagain)   
+        }
+
+        validate( Activity("1", new Date(), Some(new Date()), "actOne") )
+        validate( Activity("1", new Date(), None, "actOne") )
     }
     "A persistence" should "marshal and unmarshal a task" in {
         import de.velopmind.idometer.Time._
-        val task = Task("one", "one's description",
+        def validate(task: Task) {
+          val persist = new Persistence()
+          val xml = persist.taskToXml(task)
+          val taskagain = persist.xmlToTask(xml)
+
+          task should equal (taskagain)   
+        }
+        
+        validate( Task("one", "one's description",
                         Duration(2 h),  Duration(0), // will not be restored: Duration(1 h),  
-                        Nil, true ) 
-//         val act = Activity("1", new Date(), Some(new Date()), "actOne")
-         val persist = new Persistence()
-         val xml = persist.taskToXml(task)
-         val taskagain = persist.xmlToTask(xml)
-         
-         task should equal (taskagain)   
+                        Nil, true ) ) 
     }
-/*    "A persistence" should "unmarshal a sequence of activities" in {
-         def  makeActivityXml(tid:String, start:Long, desc:String) = <activity>
-                                  <taskid>{act.taskid}</taskid>
-                                  <start>{act.start.getTime}</start>
-                                           case None     => <stop />
-                                  <desc>{act.descr}</desc>
-                               </activity> 
+    "A persistence" should "unmarshal a sequence of activities" in {
+         def  makeActivityXml(tid:String, start:Date, desc:String) = <activity>
+              <taskid>{tid}</taskid>
+              <start>{start.getTime()}</start>
+              <stop />
+              <desc>{desc}</desc>
+              </activity> 
+         implicit val testdate = "20110524"
 
          val xml = <root>
-                  {makeActivityXml("one", 987654329, "Uno")}
-                  {makeActivityXml("two", 987654328, "Dos")}
-                  {makeActivityXml("two", 987654327, "Tres")}
-                    </root>
-          
+                  {makeActivityXml("one", createdate("08:32:00"), "Uno")}
+                  {makeActivityXml("two", createdate("09:45:00"), "Dos")}
+                  {makeActivityXml("two", createdate("10:15:00"), "Tres")}
+                  </root>
+         
+         val persist = new Persistence()
+         val activities = persist.xmlToActivities(xml)
+         activities should have size (3)
+         activities should contain (Activity("one", createdate("08:32:00"), None, "Uno" ) )
+         activities should contain (Activity("two", createdate("09:45:00"), None, "Dos" ) )
+         activities should contain (Activity("two", createdate("10:15:00"), None, "Tres" ) )
+         println (activities)                              // TODO: Validation of result !
          
     }
-*/
-  "A persistence" should "store a repository as XML" in {
-        def mockdate(time:String )(implicit testdate:String) {
-            Timestamp.datefactory = () => createdate(time)(testdate) 
-        }
 
-        def createdate(time:String )(implicit testdate:String) = {
-            import java.text.SimpleDateFormat
-            new SimpleDateFormat("yyyymmdd-hh:mm:ss").parse(testdate+"-"+time)
-        }
+    "A persistence" should "unmarshal a sequence of tasks" in {
+         def makeTaskXml(tid:String, estimated:Duration, finished:Boolean, desc:String) = 
+             <task id={tid}>
+             <descr>{desc}</descr>
+             <estimated>{estimated.toLong}</estimated>
+             <finished>{finished}</finished>
+             </task>     
+
+         val xml = <root>
+                  {makeTaskXml("one", Duration(987654329), true, "Uno")}
+                  {makeTaskXml("two", Duration(987654328), true, "Dos")}
+                  {makeTaskXml("three", Duration(987654327), false, "Tres")}
+                  </root>
+         
+         val persist = new Persistence()
+         val tasks = persist.xmlToTasks(xml)
+         tasks should have size (3)
+         tasks should contain key ("one")
+         tasks should contain value (Task("one",   "Uno",  Duration(987654329), Duration(0), Nil, true))
+         tasks should contain key ("two")
+         tasks should contain value (Task("two",   "Dos",  Duration(987654328), Duration(0), Nil, true))
+         tasks should contain key ("three")
+         tasks should contain value (Task("three", "Tres", Duration(987654327), Duration(0), Nil, false))
+         println (tasks)                       // TODO: Validation of result !
+         
+    }
+
+  "A persistence" should "store a repository as XML" in {
 
         val (one, two, three) = (Task("1", "one",   Duration(1.h)),
                                  Task("2", "two",   Duration(2.h)),
                                  Task("3", "three", Duration(3.h)))
-        val repo = new Repository
-        repo.addTask( one )
-        repo.addTask( two )
-        repo.addTask( three )
+        val orepo = new Repository
+        orepo.addTask( one )
+        orepo.addTask( two )
+        orepo.addTask( three )
 
-        repo.makeCurrent( two )
+        orepo.makeCurrent( two )
           
-        repo.allActivities = List(
-                                  Activity("1", new Date(), Some(new Date()), "actOne"),
-                                  Activity("2", new Date(), Some(new Date()), "actTwo"),
-                                  Activity("2", new Date(), Some(new Date()), "actThree"),
-                                  Activity("2", new Date(), Some(new Date()), "actFour"),
-                                  Activity("3", new Date(), Some(new Date()), "actFive"),
-                                  Activity("3", new Date(), Some(new Date()), "actSix")
+        implicit val testdate = "20110523"
+        orepo.allActivities = List(
+                                  Activity("1", createdate("11:15:00"), Some(createdate("11:17:00")), "actOne"),
+                                  Activity("2", createdate("11:17:00"), Some(createdate("11:34:00")), "actTwo"),
+                                  Activity("2", createdate("11:35:00"), Some(createdate("12:00:00")), "actThree"),
+                                  Activity("2", createdate("12:00:00"), Some(createdate("12:30:00")), "actFour"),
+                                  Activity("3", createdate("12:30:00"), Some(createdate("14:15:00")), "actFive"),
+                                  Activity("3", createdate("14:16:00"), Some(createdate("16:00:00")), "actSix")  
                                  )
           
-        new Persistence().saveRepo("./Testidometer.xml", repo)
+        new Persistence().saveRepo("./Testidometer.xml", orepo)
+        
+        val nrepo = new Persistence().loadRepo("./Testidometer.xml")
+        
+        nrepo.allTasks      should equal (orepo.allTasks)
+        nrepo.allActivities should equal (orepo.allActivities)
 
+        // nrepo should equal (orepo)    TODO: FAILS!  only the collections are saved and restored, not the state (current task and activity)
     }
 }

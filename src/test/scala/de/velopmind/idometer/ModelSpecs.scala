@@ -25,7 +25,12 @@ import java.util.Date
 
 @RunWith( classOf[JUnitRunner])
 class DurationSpec  extends FlatSpec with ShouldMatchers  {
-    "A Duration" should "represent a miliseconds span as hours (round down)" in {
+    "A Duration" should "return the same miliseconds span used to construct it" in {
+        val miliseconds = 12345678L
+        Duration(miliseconds).toLong should equal (miliseconds)
+    }
+
+    it should "represent a miliseconds span as hours (round down)" in {
         val duration = Duration( (2 * 60 + 10) * 60 * 1000 )  // 2h 10m
         duration.asHours should equal (2)
     }
@@ -189,15 +194,7 @@ class RepositorySpec   extends FlatSpec with ShouldMatchers  {
     }
 
     it should "start and stop current Task" in {
-        import java.text.SimpleDateFormat
-    
-        def mockdate(time:String )(implicit testdate:String) {
-            Timestamp.datefactory = () => createdate(time)(testdate) 
-        }
-        def createdate(time:String )(implicit testdate:String) = {
-            new SimpleDateFormat("yyyymmdd-hh:mm:ss").parse(testdate+"-"+time)
-        }
-    
+        import TimestampTestUtil._    
     
         def checkactivity(a:Activity, taskid:String, desc:String, start:Date=null, stop:Option[Date]=None) {
             a.taskid should be (taskid)

@@ -47,23 +47,25 @@ class Persistence {
     <desc>{act.descr}</desc>
     </activity> 
 
-   def saveRepo(filename:String, repo:Repository) {
+  def saveRepo(filename:String, repo:Repository) {
        scala.xml.XML.save(filename, repoToXML(repo))
-   }
+  }
    
-  def loadRepo(filename:String) {
-      val repoNode = scala.xml.XML.load(filename)
+  def loadRepo(filename:String) = {
+      xmlToRepo(scala.xml.XML.load(filename))
   }
   
   def xmlToRepo(n:Node) = {
       val repo = new Repository()
-      repo.allTasks = xmlToTasks(n)
+      repo.allTasks      = xmlToTasks(n)
       repo.allActivities = xmlToActivities(n)
+      repo
   }
   
-  def xmlToActivities(n:Node):List[Activity] = ( (n \ "activity").map { a => xmlToActivity(a)}).toList
+  def xmlToActivities(n:Node):List[Activity] = ( (n \ "activity") map {xmlToActivity} ).toList
   
-  def xmlToTasks(n:Node) = Map[String, Task]()
+  def xmlToTasks(n:Node):Map[String, Task] =
+     ((n \ "task") map {xmlToTask}).toList.foldLeft(Map[String,Task]()) {(m:Map[String, Task],t:Task) => m + (t.id -> t)}
   
   
   def xmlToTask(n:Node)     = Task(id = (n \ "@id").text,
@@ -75,7 +77,12 @@ class Persistence {
   def xmlToActivity(n:Node) = Activity(
                                     (n \ "taskid").text,
                                     new Date((n \ "start").text.toLong),
-                                    Some(new Date((n \ "stop").text.toLong)),
+                                    textToDateOption((n \ "stop").text),
                                     (n \ "desc").text
                               )
+                              
+  def textToDateOption(s:String) = s match {
+        case x:String if x.length > 0 => Some(new Date(x.toLong))
+        case _  => None
+  }
 }

@@ -1,0 +1,8 @@
+This branch is an experimental check to base the repository
+on activites instead tasks.
+
+Tasks are base data used to reference activites. Activities are
+timestamps referring to tasks. Activities can be sorted and listed
+in many ways, where summing up the tasks is only one of them.
+
+See concept.txt in this branch for the way things are implemented here.
