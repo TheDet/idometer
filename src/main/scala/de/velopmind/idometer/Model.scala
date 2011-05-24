@@ -33,6 +33,9 @@ case class Task(id:String,
     }
     
     def finish = copy(finished = true)
+    
+    override def toString = "Task :: "+id+" est:"+estimatedTime.asTime+" cons:"+consumedTime.asTime+" finished:"+finished+
+                            "\n----------------------\n"+descr+"\n---------------------\n"
 }
 
 /** 
@@ -58,6 +61,8 @@ case class Activity (taskid:String,
       case Some(stopdate) => Duration( stopdate.getTime - start.getTime )
       case None             => Duration( Timestamp.time - start.getTime)
     }
+    override def toString = "Activity :: task:"+taskid+" start:"+start+" stop:"+stop+
+                            "\n----------------------\n"+descr+"\n---------------------\n"
 }
 
 
