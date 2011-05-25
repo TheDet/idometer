@@ -23,6 +23,7 @@ package de.velopmind.idometer
 object TimestampTestUtil {
     import java.text.SimpleDateFormat
     
+    val format = "yyyyMMdd-HH:mm:ss"
     /**
      * Sets a Date factory on the Timestamp object.
      * The factory uses the createdate method with the given time parameter and the date implicit parameter
@@ -34,7 +35,10 @@ object TimestampTestUtil {
     /**
      * Creates a Date object by parsing the time parameter and the date implicit parameter
      */
-    def createdate(time:String )(implicit testdate:String) = {
-        new SimpleDateFormat("yyyymmdd-hh:mm:ss").parse(testdate+"-"+time)
-    }
+    def createdate(time:String)(implicit testdate:String) = 
+        toDate(testdate+"-"+time)
+    
+    
+    def toDate(datetime:String) = 
+        new SimpleDateFormat(format).parse(datetime)
 }

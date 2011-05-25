@@ -76,7 +76,6 @@ class PersistenceSpec  extends FlatSpec with ShouldMatchers  {
          activities should contain (Activity("one", createdate("08:32:00"), None, "Uno" ) )
          activities should contain (Activity("two", createdate("09:45:00"), None, "Dos" ) )
          activities should contain (Activity("two", createdate("10:15:00"), None, "Tres" ) )
-         println (activities)                              // TODO: Validation of result !
          
     }
 
@@ -103,7 +102,6 @@ class PersistenceSpec  extends FlatSpec with ShouldMatchers  {
          tasks should contain value (Task("two",   "Dos",  Duration(987654328), Duration(0), Nil, true))
          tasks should contain key ("three")
          tasks should contain value (Task("three", "Tres", Duration(987654327), Duration(0), Nil, false))
-         println (tasks)                       // TODO: Validation of result !
          
     }
 

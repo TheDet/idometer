@@ -6,6 +6,7 @@
  */
 
 import de.velopmind.idometer.Time._
+import de.velopmind.idometer.Filter._
 import de.velopmind.idometer.CmdLineUI._
 
 def fillTasks {
