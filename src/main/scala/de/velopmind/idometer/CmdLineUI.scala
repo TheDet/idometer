@@ -33,18 +33,24 @@ object CmdLineUI {
   
    var repo = new Repository()
    
-   def newTask(id:Int, title:String, descr:String, estimatedTime:Long=0) { repo.addTask( Task(id, title, descr, Duration(estimatedTime)) ) }
-   def listTasks { repo.allTasks.foreach { println }}
-   def listActs { repo.allActivities.foreach { println }}
+   def newTask(id:Int, title:String, descr:String, estimatedTime:Long=0) { 
+       repo.addTask( Task(id, title, descr, Duration(estimatedTime)) ) 
+   }
+
+   def listTasks   { repo.allTasks.foreach { println }}
+   def listActs    { repo.allActivities.foreach { println }}
    def listCurrent { println ("Task: "+repo.currentTask+"\nActivity: "+repo.currentActivity) }
-   def start { repo.startCurrent() }
-   def stop(msg:String="") { repo.stopCurrent(msg) }
+
+   def start               { repo.startCurrent() ; repo.currentTask.foreach {t:Task => println ("Task '"+t.title+"' started")}}
+   def stop(msg:String="") { repo.stopCurrent(msg); println("Task stopped") }
+
    def switchTo(sid:Int, msg:String="") {
        repo.stopCurrent(msg)
        repo.allTasks.get(sid).foreach (repo.makeCurrent)  // hint: amap.get(key) returns Option[T]
    } 
-   def save(file:String=defaultFile) { new Persistence().saveRepo(file, repo) }
-   def load(file:String=defaultFile ) { repo = new Persistence().loadRepo(file) }
+
+   def save(file:String=defaultFile) { new Persistence().saveRepo(file, repo);  println ("File "+file+" stored to disk") }
+   def load(file:String=defaultFile) { repo = new Persistence().loadRepo(file); println ("File "+file+" loaded from disk") }
    
    def help = """
    newTask(id:Int, title:String, descr:String, estimatedTime:Long=0)
