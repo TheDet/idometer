@@ -37,22 +37,23 @@ object CmdLineUI {
    def listTasks { repo.allTasks.foreach { println }}
    def listActs { repo.allActivities.foreach { println }}
    def listCurrent { println ("Task: "+repo.currentTask+"\nActivity: "+repo.currentActivity) }
-   def selectTask {}
    def start { repo.startCurrent() }
-   def stop { repo.stopCurrent()}
-   def switchTo(sid:Int) { repo.allTasks.get(sid).foreach (repo.makeCurrent) } // hint: amap.get(key) returns Option[T]
-   //def switchTo(sid:String) { repo.makeCurrent( repo.allTasks.get(sid) )  }
-   def save { new Persistence().saveRepo(defaultFile, repo) }
-   def load { repo = new Persistence().loadRepo(defaultFile) }
+   def stop(msg:String="") { repo.stopCurrent(msg) }
+   def switchTo(sid:Int, msg:String="") {
+       repo.stopCurrent(msg)
+       repo.allTasks.get(sid).foreach (repo.makeCurrent)  // hint: amap.get(key) returns Option[T]
+   } 
+   def save(file:String=defaultFile) { new Persistence().saveRepo(file, repo) }
+   def load(file:String=defaultFile ) { repo = new Persistence().loadRepo(file) }
    
    def help = """
-   newTask(id:String, descr:String, estimatedTime:Long=0)
+   newTask(id:Int, title:String, descr:String, estimatedTime:Long=0)
    listTasks
-   selectTask
+   listActs 
    start
-   stop
-   switchTo(id)
-   save
-   load
+   stop([msg])
+   switchTo(id)  -- stops current task and switches to other task (does not start it!)
+   save( [filename] )
+   load( [filename] )
    """
 }

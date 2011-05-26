@@ -10,7 +10,7 @@ import de.velopmind.idometer.Filter._
 import de.velopmind.idometer.CmdLineUI._
 
 def fillTasks {
-   newTask("one", "First Task")
-   newTask("two", "Second Task", 5 h )
-   newTask("three", "Third Task", 8 h )
+   newTask(1, "one", "First Task")
+   newTask(2, "two", "Second Task", 5 h )
+   newTask(3, "three", "Third Task", 8 h )
 }
