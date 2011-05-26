@@ -3,3 +3,4 @@ lib_managed/
 *.class
 project/boot/
 /nbproject/private/
+/Testidometer.xml

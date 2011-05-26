@@ -30,7 +30,8 @@ class Persistence {
     </repository>
     
   def taskToXml(task:Task) = 
-    <task id ={task.id}>
+    <task id ={task.id.toString}>
+    <title>{task.title}</title>
     <descr>{task.descr}</descr>
     <estimated>{task.estimatedTime.milisec}</estimated>
     <finished>{task.finished}</finished>
@@ -64,18 +65,19 @@ class Persistence {
   
   def xmlToActivities(n:Node):List[Activity] = ( (n \ "activity") map {xmlToActivity} ).toList
   
-  def xmlToTasks(n:Node):Map[String, Task] =
-     ((n \ "task") map {xmlToTask}).toList.foldLeft(Map[String,Task]()) {(m:Map[String, Task],t:Task) => m + (t.id -> t)}
+  def xmlToTasks(n:Node):Taskmap =
+     ((n \ "task") map {xmlToTask}).toList.foldLeft(new Taskmap()) {(m:Taskmap,t:Task) => m + (t.id -> t)}
   
   
-  def xmlToTask(n:Node)     = Task(id = (n \ "@id").text,
+  def xmlToTask(n:Node)     = Task(id = (n \ "@id").text.toInt,
+                                   title = (n \ "title").text,
                                    descr = (n \ "descr").text,
                                    estimatedTime = Duration((n \ "estimated").text.toLong),
                                    finished = (n \ "finished").text.toBoolean
                               ) 
   
   def xmlToActivity(n:Node) = Activity(
-                                    (n \ "taskid").text,
+                                    (n \ "taskid").text.toInt,
                                     new Date((n \ "start").text.toLong),
                                     textToDateOption((n \ "stop").text),
                                     (n \ "desc").text

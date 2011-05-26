@@ -33,14 +33,14 @@ object CmdLineUI {
   
    var repo = new Repository()
    
-   def newTask(id:String, descr:String, estimatedTime:Long=0) { repo.addTask( Task(id, descr, Duration(estimatedTime)) ) }
+   def newTask(id:Int, title:String, descr:String, estimatedTime:Long=0) { repo.addTask( Task(id, title, descr, Duration(estimatedTime)) ) }
    def listTasks { repo.allTasks.foreach { println }}
    def listActs { repo.allActivities.foreach { println }}
    def listCurrent { println ("Task: "+repo.currentTask+"\nActivity: "+repo.currentActivity) }
    def selectTask {}
    def start { repo.startCurrent() }
    def stop { repo.stopCurrent()}
-   def switchTo(sid:String) { repo.allTasks.get(sid).foreach (repo.makeCurrent) } // hint: amap.get(key) returns Option[T]
+   def switchTo(sid:Int) { repo.allTasks.get(sid).foreach (repo.makeCurrent) } // hint: amap.get(key) returns Option[T]
    //def switchTo(sid:String) { repo.makeCurrent( repo.allTasks.get(sid) )  }
    def save { new Persistence().saveRepo(defaultFile, repo) }
    def load { repo = new Persistence().loadRepo(defaultFile) }

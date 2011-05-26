@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package de.velopmind.idometer
+package de.velopmind
 
-object Filter {
-   import java.util.Date
-
-   def filterActivitiesByDateRange(acts:List[Activity], from:Date, to:Date) =
-       acts.filter { x => from.getTime <= x.start.getTime  && to.getTime >= x.stop.map(_.getTime).getOrElse(java.lang.Long.MAX_VALUE) } 
-     
-   def filterActivitiesByTask(acts:List[Activity], id:Int) = acts.filter ( x => x.taskid == id)
+package object idometer {
+    import de.velopmind.idometer.Task
+    import scala.collection.immutable.TreeMap
+    
+    type Taskmap = TreeMap[Int, Task]
 }

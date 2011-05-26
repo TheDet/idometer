@@ -16,7 +16,8 @@ import java.util.Date
  A person works on one task at a time.
  Starting to work on a task stops other running tasks.
 */
-case class Task(id:String, 
+case class Task(id:Int,
+                title:String, 
                 descr:String,
                 estimatedTime:Duration,
                 consumedTime:Duration = Duration(0),
@@ -34,7 +35,7 @@ case class Task(id:String,
     
     def finish = copy(finished = true)
     
-    override def toString = "Task :: "+id+" est:"+estimatedTime.asTime+" cons:"+consumedTime.asTime+" finished:"+finished+
+    override def toString = "Task :: "+id+" title:"+title+" est:"+estimatedTime.asTime+" cons:"+consumedTime.asTime+" finished:"+finished+
                             "\n----------------------\n"+descr+"\n---------------------\n"
 }
 
@@ -47,7 +48,7 @@ case class Task(id:String,
  * When stopping an activity, a text can be stored in 'descr' to report
  * what has been done during the period of this activity.
  */
-case class Activity (taskid:String,
+case class Activity (taskid:Int,
                      start:Date = Timestamp(),
                      stop:Option[Date] = None,
                      descr:String = ""
@@ -118,7 +119,7 @@ object Timestamp {
  * and has basic commands to control tasks.
  */
 class Repository {
-    var allTasks                 = Map[String, Task]()   // Or should it be a List ??
+    var allTasks                 = new Taskmap()   // Or should it be a List ??
     var allActivities            = List[Activity]()      // contains only finished activities
     var currentTask:Option[Task] = None
     var currentActivity:Option[Activity] = None          // contains the currently open activity (unfinished)

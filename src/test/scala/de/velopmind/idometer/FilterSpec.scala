@@ -30,19 +30,19 @@ class FilterSpec  extends FlatSpec with ShouldMatchers  {
 
    "A Filter" should "filter activities by task id" in {
         implicit val testdate = "20110524"
-        def create(descr:String, taskid:String="1") = 
+        def create(descr:String, taskid:Int=1) = 
             Activity(taskid, createdate("10:00:00"), Some(createdate("12:00:00")), descr)
       
         val act1 = create("actOne")
         val act2 = create("actTwo")
         val act3 = create("actThree")
-        val actother1 = create("otherOne", "2")
-        val actother2 = create("otherTwo", "2")
-        val actother3 = create("otherThree", "2")
+        val actother1 = create("otherOne", 2)
+        val actother2 = create("otherTwo", 2)
+        val actother3 = create("otherThree", 2)
         
         val acts = List(act1, actother1, act2, act3, actother2, actother3)
         
-        val byOne = filterActivitiesByTask(acts, "1" )   
+        val byOne = filterActivitiesByTask(acts, 1 )   
     
         byOne should have size (3)
         byOne should equal ( List(act1, act2, act3) ) 
@@ -50,7 +50,7 @@ class FilterSpec  extends FlatSpec with ShouldMatchers  {
 
    "A Filter" should "filter activities by date range" in {
         def createAct(startdate:String, stopdate:String) = 
-            Activity("1", toDate(startdate+"-10:00:00"), Some(toDate(stopdate+"-11:00:00")), "Activity for task 1")  
+            Activity(1, toDate(startdate+"-10:00:00"), Some(toDate(stopdate+"-11:00:00")), "Activity for task 1")  
       
         val act1 = createAct("20110501", "20110502")
         val act2 = createAct("20110502", "20110503")
