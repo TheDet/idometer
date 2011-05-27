@@ -22,14 +22,23 @@ import Swing._
 import de.velopmind.idometer.xml._
 
 object IdometerGui  extends SimpleSwingApplication {
-  var repo:Repository = new Repository()
-  var currentFile:Option[String] = None
+    var repo:Repository = new Repository()
+    var currentFile:Option[String] = None
 
-  val mainPanel = new BorderPanel {
-            import BorderPanel._
-      }  
-  
-  val mainFrame = new MainFrame() {
+    val statusBar = new FlowPanel {
+        val statustext = new Label
+        contents += statustext
+
+        def status(msg:String) { statustext.text = msg}
+    }
+
+    val mainPanel = new BorderPanel {
+        import BorderPanel._
+
+        add(statusBar, Position.South)
+    }  
+
+    val mainFrame = new MainFrame() {
         preferredSize = (600,400)
         menuBar = new MenuBar {
                      contents += new Menu("File") {
@@ -39,43 +48,54 @@ object IdometerGui  extends SimpleSwingApplication {
                        contents += new MenuItem( Action("Exit") { System.exit(0)} )  
                      }
                      contents += new Menu("Edit") {
-                       contents += new MenuItem( Action("Open")      { println ("hello")} )  
-                       contents += new MenuItem( Action("Save")      { println ("hello")} )  
-                       contents += new MenuItem( Action("SaveAs...") { println ("hello")} )  
+                       contents += new MenuItem( Action("Dummy")      { println ("hello")} )  
                      }
                      contents += new Menu("View") {
                        contents += new MenuItem( Action("Tasks")      { println ("hello")} )  
-                       contents += new MenuItem( Action("Activities")      { println ("hello")} )  
-                       contents += new MenuItem( Action("Stopwatch") { println ("hello")} )  
+                       contents += new MenuItem( Action("Activities") { println ("hello")} )  
+                       contents += new MenuItem( Action("Stopwatch")  { println ("hello")} )  
+                     }
+                     contents += new Menu("?") {
+                       contents += new MenuItem( Action("About")      { showInfo } )  
                      }
                   }
 //        val x = new Panel() {}
         contents = mainPanel
-  }
-  
-  def top = mainFrame
-  
-    
-  def openFile() {
-    val fc = new FileChooser()
-    val res = fc.showOpenDialog(mainPanel)
-    if (res == FileChooser.Result.Approve) {
-        currentFile = Some(fc.selectedFile.getCanonicalPath)
-        repo = new Persistence().loadRepo(currentFile.get)
-        mainFrame.title = currentFile.get
     }
-  }
   
-  def saveFile() {
-    currentFile.foreach { f=> new Persistence().saveRepo( f , repo) }
-  }
+    def top = mainFrame
 
-  def saveFileAs() {
-    val fc = new FileChooser()
-    val res = fc.showSaveDialog(mainPanel)
-    if (res == FileChooser.Result.Approve) {
-        new Persistence().saveRepo(fc.selectedFile.getCanonicalPath, repo)
+    def showInfo() {
+        val message = """
+        |  I-do-Meter
+        |  Version: 0.1 pre-alpha
+        |  Author:  Dirk Detering
+        |  Licence: Apache Licence 2.0
+        |  Webpage: https://github.com/TheDet/idometer
+        """.stripMargin
+        Dialog.showMessage(mainPanel, message, "About", Dialog.Message.Info)
     }
-  }
+
+    def openFile() {
+        val fc = new FileChooser()
+        val res = fc.showOpenDialog(mainPanel)
+        if (res == FileChooser.Result.Approve) {
+            currentFile = Some(fc.selectedFile.getCanonicalPath)
+            repo = new Persistence().loadRepo(currentFile.get)
+            mainFrame.title = currentFile.get
+        }
+    }
+
+    def saveFile() {
+        currentFile.foreach { f=> new Persistence().saveRepo( f , repo) ; statusBar.status("File saved")}
+    }
+
+    def saveFileAs() {
+        val fc = new FileChooser()
+        val res = fc.showSaveDialog(mainPanel)
+        if (res == FileChooser.Result.Approve) {
+            new Persistence().saveRepo(fc.selectedFile.getCanonicalPath, repo) ; statusBar.status("File saved")
+        }
+    }
 
 }
