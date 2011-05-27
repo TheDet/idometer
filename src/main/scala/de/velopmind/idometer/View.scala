@@ -19,12 +19,16 @@ package de.velopmind.idometer
 import scala.swing._
 import Swing._
 
-object TimeControlGui  extends SimpleSwingApplication {
+object IdometerGui  extends SimpleSwingApplication {
+  var repo:Repository = new Repository()
+  
   val mainFrame = new Frame() {
+        preferredSize = (500,300)
         menuBar = new MenuBar {
                      contents += new Menu("File") {
-                       contents += new MenuItem( Action("hello") { println ("hello")} )  
-                       contents += new MenuItem( Action("hugo") { println ("hello")} )  
+                       contents += new MenuItem( Action("Open") { println ("hello")} )  
+                       contents += new MenuItem( Action("Save") { println ("hello")} )  
+                       contents += new MenuItem( Action("SaveAs...") { println ("hello")} )  
                      }
                   }
         val x = new Panel() {}
