@@ -1,5 +1,4 @@
-<project default="default" basedir="." name="idometer">
-    <description>Builds, tests, and runs the project sbt-netbeans-plugin.</description><target name="clean" description="Clean build products."><exec executable="sbt" dir="">
+<project default="default" basedir="." name="idometer"><target name="clean" description="Clean build products."><exec executable="sbt" dir="">
             <arg value="clean"></arg>
         </exec>
     </target>

@@ -1,5 +1,7 @@
 <project xmlns="http://www.netbeans.org/ns/project/1">
-    <configuration><data xmlns="http://www.netbeans.org/ns/scala-project/1"><name>idometer</name>
+    <type>org.netbeans.modules.scala.project</type>
+    <configuration>
+        <data xmlns="http://www.netbeans.org/ns/scala-project/1"><name>idometer</name>
             <minimum-ant-version>1.6.5</minimum-ant-version>
             <source-roots>
                 <root id="src.dir"></root>
