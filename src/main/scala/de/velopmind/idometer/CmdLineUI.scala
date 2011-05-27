@@ -30,36 +30,40 @@ object CmdLineUI {
    import de.velopmind.idometer.xml.Persistence
 
    val defaultFile = "./TestConsoleIdometer.xml"
-  
+   var currentFile = defaultFile
    var repo = new Repository()
    
-   def newTask(id:Int, title:String, descr:String, estimatedTime:Long=0) { 
-       repo.addTask( Task(id, title, descr, Duration(estimatedTime)) ) 
+   def newTask(title:String, descr:String, estimatedTime:Long=0) { 
+     repo.addTask( Task(repo.allTasks.keys.max + 1, title, descr, Duration(estimatedTime)) ) 
    }
 
    def listTasks   { repo.allTasks.foreach { println }}
    def listActs    { repo.allActivities.foreach { println }}
-   def listCurrent { println ("Task: "+repo.currentTask+"\nActivity: "+repo.currentActivity) }
+   def listCurrent { println ("File: "+currentFile+"\nTask: "+repo.currentTask+"\nActivity: "+repo.currentActivity) }
 
    def start               { repo.startCurrent() ; repo.currentTask.foreach {t:Task => println ("Task '"+t.title+"' started")}}
-   def stop(msg:String="") { repo.stopCurrent(msg); println("Task stopped") }
+   def stop(msg:String="") { val curname = repo.currentTask.map(_.title).getOrElse("-none-"); repo.stopCurrent(msg); println("Task "+curname+" stopped") }
 
    def switchTo(sid:Int, msg:String="") {
-       repo.stopCurrent(msg)
+       stop(msg)
        repo.allTasks.get(sid).foreach (repo.makeCurrent)  // hint: amap.get(key) returns Option[T]
+       println ("Current task: "+repo.currentTask.map(_.title).getOrElse("-none-")+" (stopped)")
    } 
 
-   def save(file:String=defaultFile) { new Persistence().saveRepo(file, repo);  println ("File "+file+" stored to disk") }
-   def load(file:String=defaultFile) { repo = new Persistence().loadRepo(file); println ("File "+file+" loaded from disk") }
+   def save                { new Persistence().saveRepo(currentFile, repo);  println ("File "+currentFile+" stored to disk") }
+   def saveAs(file:String) { new Persistence().saveRepo(file, repo);  println ("File "+file+" stored to disk") }
+   def load(file:String=defaultFile) { repo = new Persistence().loadRepo(file); currentFile=file; println ("File "+file+" loaded from disk") }
    
    def help = """
-   newTask(id:Int, title:String, descr:String, estimatedTime:Long=0)
+   newTask(title:String, descr:String, estimatedTime:Long=0)
    listTasks
    listActs 
+   listCurrent
    start
    stop([msg])
-   switchTo(id)  -- stops current task and switches to other task (does not start it!)
-   save( [filename] )
+   switchTo(id [,msg])  -- stops current task and switches to other task (does not start it!)
+   save                 -- saves current file to disk
+   saveAs( [filename] ) -- saves file as filename (does not switch current file name!)
    load( [filename] )
    """
 }
