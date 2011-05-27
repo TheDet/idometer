@@ -37,12 +37,12 @@ object CmdLineUI {
      repo.addTask( Task(repo.allTasks.keys.max + 1, title, descr, Duration(estimatedTime)) ) 
    }
 
-   def listTasks   { repo.allTasks.foreach { println }}
-   def listActs    { repo.allActivities.foreach { println }}
-   def listCurrent { println ("File: "+currentFile+"\nTask: "+repo.currentTask+"\nActivity: "+repo.currentActivity) }
+   def tasks   { repo.allTasks.foreach { println }}
+   def acts    { repo.allActivities.foreach { println }}
+   def current { println ("File: "+currentFile+"\nTask: "+repo.currentTask+"\nActivity: "+repo.currentActivity) }
 
-   def start               { repo.startCurrent() ; repo.currentTask.foreach {t:Task => println ("Task '"+t.title+"' started")}}
-   def stop(msg:String="") { val curname = repo.currentTask.map(_.title).getOrElse("-none-"); repo.stopCurrent(msg); println("Task "+curname+" stopped") }
+   def start               { repo.startCurrent() ; repo.currentTask.foreach {t:Task => println ("Task '"+t.title+"' started at: "+Timestamp())}}
+   def stop(msg:String="") { val curname = repo.currentTask.map(_.title).getOrElse("-none-"); repo.stopCurrent(msg); println("Task "+curname+" stopped at: "+Timestamp()) }
 
    def switchTo(sid:Int, msg:String="") {
        stop(msg)
@@ -54,11 +54,21 @@ object CmdLineUI {
    def saveAs(file:String) { new Persistence().saveRepo(file, repo);  println ("File "+file+" stored to disk") }
    def load(file:String=defaultFile) { repo = new Persistence().loadRepo(file); currentFile=file; println ("File "+file+" loaded from disk") }
    
+   // TODO: Only experimental here - has to be refactored into other sources.  1.) The consolidation of data  2.) The report layouting
+   def report {
+     repo.allTasks.foreach { tentry =>
+       val x = tentry._2.consume(repo.allActivities.filter( _.taskid == tentry._1 )) 
+       println (x)
+       println (x.activities)
+       println ("==========================================================================================")
+     }
+   }
+   
    def help = """
    newTask(title:String, descr:String, estimatedTime:Long=0)
-   listTasks
-   listActs 
-   listCurrent
+   tasks
+   acts 
+   current
    start
    stop([msg])
    switchTo(id [,msg])  -- stops current task and switches to other task (does not start it!)

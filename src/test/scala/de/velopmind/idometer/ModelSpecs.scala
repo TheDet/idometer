@@ -23,6 +23,9 @@ import org.junit.runner.RunWith
 
 import java.util.Date
 
+import de.velopmind.idometer.Time._
+import TimestampTestUtil._    
+
 @RunWith( classOf[JUnitRunner])
 class DurationSpec  extends FlatSpec with ShouldMatchers  {
 
@@ -55,7 +58,6 @@ class DurationSpec  extends FlatSpec with ShouldMatchers  {
 
 @RunWith( classOf[JUnitRunner])
 class TimeSpec  extends FlatSpec with ShouldMatchers  {
-    import de.velopmind.idometer.Time._
 
     "Time" should "represent long number as hours" in {
         val time = 5.h
@@ -76,8 +78,14 @@ class TimestampSpec  extends FlatSpec with ShouldMatchers  {
     }
 
     it should "return current date as long" in {
-        val time = Timestamp.time
-    //time should equal ( 5 * 60 * 60 * 1000)
+        val longvalue:Long = 12345678
+        Timestamp.datefactory = () => new Date(longvalue)
+        val date:Date = new Date(longvalue)
+        
+        // method under test
+        val time:Long = Timestamp.time
+        date should equal (new Date(time))
+        Timestamp.datefactory = Timestamp.defaultfactory
     }
 
     it should "use set factory" in {
@@ -94,7 +102,8 @@ class TimestampSpec  extends FlatSpec with ShouldMatchers  {
         fixtime should equal (fixtimed)
         fixtime.getTime should equal (fixtimelong)
         fixtimelong should equal (longvalue)
-        //time should equal ( 5 * 60 * 60 * 1000)
+        
+        Timestamp.datefactory = Timestamp.defaultfactory
     }
 }
 
@@ -160,7 +169,6 @@ class ActivitySpec  extends FlatSpec with ShouldMatchers  {
 
 @RunWith( classOf[JUnitRunner])
 class TaskSpec  extends FlatSpec with ShouldMatchers  {
-    import de.velopmind.idometer.Time._
 
     "A Task" should "be initialised with default values" in {
         val task = Task(1, "one", "first task", Duration(5.h))
@@ -178,11 +186,22 @@ class TaskSpec  extends FlatSpec with ShouldMatchers  {
         val consumed = task.consume(activity) 
         consumed.consumedTime.asMinutes should equal (2) // 130 seconds rounded down
     }
+
+    it should "consume a list of activities" in {
+        implicit val testdate = "20110525"
+        val task     = Task(1, "1", "first", Duration(5.h))
+        val activities = List( Activity(1, start = createdate("10:00:00"), stop = Some(createdate("10:02:00"))),
+                               Activity(1, start = createdate("11:00:00"), stop = Some(createdate("11:03:00"))),
+                               Activity(1, start = createdate("12:00:00"), stop = Some(createdate("12:04:00")))
+                             )
+        val consumed = task.consume(activities)
+        
+        consumed.consumedTime.asMinutes should equal (9) 
+    }
 }
 
 @RunWith( classOf[JUnitRunner])
 class RepositorySpec   extends FlatSpec with ShouldMatchers  {
-    import de.velopmind.idometer.Time._
 
     "The Repository" should "accept Tasks" in {
         val (one, two, three) = (Task(1, "1", "one",   Duration(1.h)),
@@ -213,7 +232,6 @@ class RepositorySpec   extends FlatSpec with ShouldMatchers  {
     }
 
     it should "start and stop current Task" in {
-        import TimestampTestUtil._    
     
         def checkactivity(a:Activity, taskid:Int, desc:String, start:Date=null, stop:Option[Date]=None) {
             a.taskid should be (taskid)
@@ -223,26 +241,25 @@ class RepositorySpec   extends FlatSpec with ShouldMatchers  {
         }
     
         implicit val testdate = "20110403"
-        val one = Task(1, "1", "one", Duration(1.h))
+        val one  = Task(1, "1", "one", Duration(1.h))
         val repo = new Repository                                 
         repo.addTask( one )
         repo.makeCurrent( one )
-        mockdate("10:32:05")
-        repo.startCurrent()
+
+        mockdate("10:32:05") ; repo.startCurrent()
+        
         repo.allActivities.size should equal (0)
         val act = repo.currentActivity
         act should not equal (None)
         checkactivity(act.get, 1, "", createdate("10:32:05"), None) //TODO : further verify act !
-        mockdate("10:33:35")
-        repo.stopCurrent("stopit")
+        
+        mockdate("10:33:35") ; repo.stopCurrent("stopit")
     
         repo.allActivities.size should equal (1)
         checkactivity(repo.allActivities(0), 1, "stopit", createdate("10:32:05") , Some(createdate("10:33:35")))    
 
-        mockdate("10:42:42")
-        repo.startCurrent()
-        mockdate("10:46:42")
-        repo.stopCurrent("stopagain")
+        mockdate("10:42:42")  ; repo.startCurrent()
+        mockdate("10:46:42")  ; repo.stopCurrent("stopagain")
 
         repo.allActivities.size should equal (2)
         checkactivity(repo.allActivities(1), 1, "stopit", createdate("10:32:05") , Some(createdate("10:33:35")))    

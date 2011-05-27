@@ -32,6 +32,8 @@ case class Task(id:Int,
       copy(  consumedTime = (consumedTime + activity.duration),
              activities   = activity :: this.activities          )
     }
+
+    def consume(activities:List[Activity]):Task = activities.foldLeft(this) {(t,a) => t.consume(a)}
     
     def finish = copy(finished = true)
     
