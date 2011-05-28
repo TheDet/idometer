@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package de.velopmind.idometer
+package de.velopmind.idometer.swing
 
 import scala.swing._
 import Swing._
 
+import de.velopmind.idometer._
 import de.velopmind.idometer.xml._
 
 object IdometerGui  extends SimpleSwingApplication {
@@ -31,10 +32,28 @@ object IdometerGui  extends SimpleSwingApplication {
 
         def status(msg:String) { statustext.text = msg}
     }
+    
+    class DisplayTask(t:Task) {
+         override def toString = ""+t.id+":"+t.title
+    }
+
+    val clockPanel = new FlowPanel {
+        import FlowPanel._
+        implicit def taskToDisplay(ts:Iterable[Task]):Seq[DisplayTask] = ts.toList.map( new DisplayTask(_))
+        
+        val taskSelector = new ComboBox[DisplayTask]( repo.allTasks.values )
+
+        contents += taskSelector
+        contents += Button("Start") {}
+        contents += Button("Stop")  {}
+        
+        def updateSelector() { taskSelector.peer.setModel(ComboBox.newConstantModel(repo.allTasks.values))}
+    }
 
     val mainPanel = new BorderPanel {
         import BorderPanel._
 
+        add(clockPanel, Position.Center)
         add(statusBar, Position.South)
     }  
 
@@ -48,7 +67,9 @@ object IdometerGui  extends SimpleSwingApplication {
                        contents += new MenuItem( Action("Exit") { System.exit(0)} )  
                      }
                      contents += new Menu("Edit") {
-                       contents += new MenuItem( Action("Dummy")      { println ("hello")} )  
+                       contents += new MenuItem( Action("Timed Status")      { timedStatus("Timed Status")} )  
+                       contents += new MenuItem( Action("Status")            { statusBar.status("Normal")} )  
+                       contents += new MenuItem( Action("Clear Status")      { statusBar.status("")} )  
                      }
                      contents += new Menu("View") {
                        contents += new MenuItem( Action("Tasks")      { println ("hello")} )  
@@ -64,6 +85,9 @@ object IdometerGui  extends SimpleSwingApplication {
     }
   
     def top = mainFrame
+    
+  
+    // MENU Actions 
 
     def showInfo() {
         val message = """
@@ -83,19 +107,49 @@ object IdometerGui  extends SimpleSwingApplication {
             currentFile = Some(fc.selectedFile.getCanonicalPath)
             repo = new Persistence().loadRepo(currentFile.get)
             mainFrame.title = currentFile.get
+            clockPanel.updateSelector()
         }
     }
 
     def saveFile() {
-        currentFile.foreach { f=> new Persistence().saveRepo( f , repo) ; statusBar.status("File saved")}
+        currentFile.foreach { f=> new Persistence().saveRepo( f , repo) ; timedStatus("File saved")}
     }
 
     def saveFileAs() {
         val fc = new FileChooser()
         val res = fc.showSaveDialog(mainPanel)
         if (res == FileChooser.Result.Approve) {
-            new Persistence().saveRepo(fc.selectedFile.getCanonicalPath, repo) ; statusBar.status("File saved")
+            new Persistence().saveRepo(fc.selectedFile.getCanonicalPath, repo) ; timedStatus("File saved")
         }
+    }
+    
+  
+    // UTILS 
+    
+    def timedStatus(msg:String) {
+        val timer = Timer.doOnce(4000) { statusBar.status("")}
+        statusBar.status(msg)
+        timer.start
     }
 
 }
+
+
+
+object Timer {  // TODO: This construct should be based on scala.swing.Swing.ActionListener, scala.swing.event.ActionEvent
+  import javax.swing.Timer
+  import java.awt.event.{ActionListener, ActionEvent}
+
+  class TimerListener(f: =>Unit) extends ActionListener {
+      override def actionPerformed(evt:ActionEvent) { f }
+  }
+
+  def doOnce(delay:Int)(f: =>Unit) = {
+      val timer = new javax.swing.Timer(delay, new TimerListener(f))
+      timer.setRepeats(false)
+      timer
+  } 
+  
+  def doAlways(delay:Int)(f: =>Unit) = new javax.swing.Timer(delay, new TimerListener(f))
+}
+

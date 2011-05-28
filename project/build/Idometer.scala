@@ -7,5 +7,5 @@ class IdometerProject(info: ProjectInfo) extends DefaultProject(info) with SbtNe
     val scalaSwing = "org.scala-lang" % "scala-swing" % "2.9.0"
     val junit      = "junit" % "junit" % "4.8.2"
     
-    override def mainClass = Some("de.velopmind.idometer.IdometerGui")
+    override def mainClass = Some("de.velopmind.idometer.swing.IdometerGui")
 }
