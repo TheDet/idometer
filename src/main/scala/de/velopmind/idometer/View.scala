@@ -50,16 +50,12 @@ object IdometerGui  extends SimpleSwingApplication {
         val taskSelector = new ComboBox[DisplayTask]( repo.allTasks.values )
 
         contents += taskSelector
-        contents += Button(i18n("b_start")) { 
-                      repo.startCurrent; 
-                      repo.currentTask.foreach { t => statusBar.status("Task "+t.title+" started") } 
-                    } 
+        contents += Button(i18n("b_start")) { start } 
         contents += Button(i18n("b_stop"))  { val msg ="-dummy-" /*TODO: get per Dialog */; stop(msg) }
         
-        listenTo(taskSelector)
+        listenTo(taskSelector.selection)
         reactions += {
-           case SelectionChanged(cb) => statusBar.status ("switch") ;switchTo( cb.asInstanceOf[ComboBox[DisplayTask]].selection.item.t.id )  //DEBUG: TODO: SC-Event not fired!!
-//           case x => println ("Event:"+x) 
+           case SelectionChanged(`taskSelector`) => switchTo( taskSelector.selection.item.t.id )
         }
         def updateSelector() { taskSelector.peer.setModel(ComboBox.newConstantModel(repo.allTasks.values)) }
     }
@@ -90,6 +86,10 @@ object IdometerGui  extends SimpleSwingApplication {
                        contents += new MenuItem( Action("Tasks")      { println ("hello")} )  
                        contents += new MenuItem( Action("Activities") { println ("hello")} )  
                        contents += new MenuItem( Action("Stopwatch")  { println ("hello")} )  
+                       contents += new MenuItem( Action("DEBUG current")  { println ("File: "+currentFile+"\nTask: "+repo.currentTask+"\nActivity: "+repo.currentActivity)} )  
+                       contents += new MenuItem( Action("DEBUG task")  { repo.allTasks.foreach { println }} )  
+                       contents += new MenuItem( Action("DEBUG actions")  { repo.allActivities.foreach { println }} )  
+                       contents += new MenuItem( Action("DEBUG switch to 3")  { switchTo(3)} )  
                      }
                      contents += new Menu("?") {
                        contents += new MenuItem( Action(i18n("i_about"))      { showInfo } )  
@@ -154,7 +154,7 @@ object IdometerGui  extends SimpleSwingApplication {
           reb.keySet().map {k => (k -> reb.getString(k))}.toMap
     }
     
-    def start               { repo.startCurrent() ; repo.currentTask.foreach {t:Task => println ("Task '"+t.title+"' started at: "+Timestamp())}}
+    def start               { repo.startCurrent() ; repo.currentTask.foreach {t:Task => statusBar.status("Task '"+t.title+"' started at: "+Timestamp())}}
     def stop(msg:String="") { val curname = repo.currentTask.map(_.title).getOrElse("-none-"); repo.stopCurrent(msg); statusBar.status("Task "+curname+" stopped at: "+Timestamp()) }
 
     def switchTo(sid:Int, msg:String="") {
