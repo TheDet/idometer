@@ -22,9 +22,14 @@ import Swing._
 import de.velopmind.idometer._
 import de.velopmind.idometer.xml._
 
+import java.util.Locale
+
 object IdometerGui  extends SimpleSwingApplication {
     var repo:Repository = new Repository()
     var currentFile:Option[String] = None
+    var currentPanel:Panel = null
+    
+    var i18n = getTranslation(Locale.ENGLISH)
 
     val statusBar = new FlowPanel {
         val statustext = new Label
@@ -33,26 +38,36 @@ object IdometerGui  extends SimpleSwingApplication {
         def status(msg:String) { statustext.text = msg}
     }
     
-    class DisplayTask(t:Task) {
+    case class DisplayTask(t:Task) {
          override def toString = ""+t.id+":"+t.title
     }
 
     val clockPanel = new FlowPanel {
         import FlowPanel._
+        import scala.swing.event._
         implicit def taskToDisplay(ts:Iterable[Task]):Seq[DisplayTask] = ts.toList.map( new DisplayTask(_))
         
         val taskSelector = new ComboBox[DisplayTask]( repo.allTasks.values )
 
         contents += taskSelector
-        contents += Button("Start") {}
-        contents += Button("Stop")  {}
+        contents += Button(i18n("b_start")) { 
+                      repo.startCurrent; 
+                      repo.currentTask.foreach { t => statusBar.status("Task "+t.title+" started") } 
+                    } 
+        contents += Button(i18n("b_stop"))  { val msg ="-dummy-" /*TODO: get per Dialog */; stop(msg) }
         
-        def updateSelector() { taskSelector.peer.setModel(ComboBox.newConstantModel(repo.allTasks.values))}
+        listenTo(taskSelector)
+        reactions += {
+           case SelectionChanged(cb) => statusBar.status ("switch") ;switchTo( cb.asInstanceOf[ComboBox[DisplayTask]].selection.item.t.id )  //DEBUG: TODO: SC-Event not fired!!
+//           case x => println ("Event:"+x) 
+        }
+        def updateSelector() { taskSelector.peer.setModel(ComboBox.newConstantModel(repo.allTasks.values)) }
     }
 
     val mainPanel = new BorderPanel {
         import BorderPanel._
 
+        currentPanel = clockPanel
         add(clockPanel, Position.Center)
         add(statusBar, Position.South)
     }  
@@ -60,24 +75,24 @@ object IdometerGui  extends SimpleSwingApplication {
     val mainFrame = new MainFrame() {
         preferredSize = (600,400)
         menuBar = new MenuBar {
-                     contents += new Menu("File") {
-                       contents += new MenuItem( Action("Open")      { openFile() } )  
-                       contents += new MenuItem( Action("Save")      { saveFile() } )  
-                       contents += new MenuItem( Action("SaveAs...") { saveFileAs() } )  
-                       contents += new MenuItem( Action("Exit") { System.exit(0)} )  
+                     contents += new Menu(i18n("m_file")) {
+                       contents += new MenuItem( Action(i18n("i_open"))   { openFile() } )  
+                       contents += new MenuItem( Action(i18n("i_save"))   { saveFile() } )  
+                       contents += new MenuItem( Action(i18n("i_saveas")) { saveFileAs() } )  
+                       contents += new MenuItem( Action(i18n("i_exit")) { System.exit(0)} )  
                      }
-                     contents += new Menu("Edit") {
+                     contents += new Menu(i18n("m_edit")) {
                        contents += new MenuItem( Action("Timed Status")      { timedStatus("Timed Status")} )  
                        contents += new MenuItem( Action("Status")            { statusBar.status("Normal")} )  
                        contents += new MenuItem( Action("Clear Status")      { statusBar.status("")} )  
                      }
-                     contents += new Menu("View") {
+                     contents += new Menu(i18n("m_view")) {
                        contents += new MenuItem( Action("Tasks")      { println ("hello")} )  
                        contents += new MenuItem( Action("Activities") { println ("hello")} )  
                        contents += new MenuItem( Action("Stopwatch")  { println ("hello")} )  
                      }
                      contents += new Menu("?") {
-                       contents += new MenuItem( Action("About")      { showInfo } )  
+                       contents += new MenuItem( Action(i18n("i_about"))      { showInfo } )  
                      }
                   }
 //        val x = new Panel() {}
@@ -131,8 +146,28 @@ object IdometerGui  extends SimpleSwingApplication {
         statusBar.status(msg)
         timer.start
     }
+    
+    def getTranslation(loc:Locale):Map[String,String] = {
+          import java.util.ResourceBundle
+          import scala.collection.JavaConversions._
+          val reb = ResourceBundle.getBundle("idomtexts", loc)
+          reb.keySet().map {k => (k -> reb.getString(k))}.toMap
+    }
+    
+    def start               { repo.startCurrent() ; repo.currentTask.foreach {t:Task => println ("Task '"+t.title+"' started at: "+Timestamp())}}
+    def stop(msg:String="") { val curname = repo.currentTask.map(_.title).getOrElse("-none-"); repo.stopCurrent(msg); statusBar.status("Task "+curname+" stopped at: "+Timestamp()) }
 
+    def switchTo(sid:Int, msg:String="") {
+       stop(msg)
+       repo.allTasks.get(sid).foreach (repo.makeCurrent)  // hint: amap.get(key) returns Option[T]
+       statusBar.status("Current task: "+repo.currentTask.map(_.title).getOrElse("-none-")+" (stopped)")
+   } 
+
+ 
 }
+
+
+
 
 
 
