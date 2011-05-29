@@ -18,133 +18,30 @@ package de.velopmind.idometer.swing
 
 import scala.swing._
 import Swing._
+import event.Key
 
 import de.velopmind.idometer._
 import de.velopmind.idometer.xml._
 
 import java.util.Locale
 
+
+
+
 object IdometerGui  extends SimpleSwingApplication {
-    var repo:Repository = new Repository()
-    var currentFile:Option[String] = None
-    var currentPanel:Panel = null
     
     var i18n = getTranslation(Locale.ENGLISH)
 
-    val statusBar = new FlowPanel {
-        val statustext = new Label
-        contents += statustext
-
-        def status(msg:String) { statustext.text = msg}
-    }
+    val mainController = new MainController
     
-    case class DisplayTask(t:Task) {
-         override def toString = ""+t.id+":"+t.title
-    }
-
-    val clockPanel = new FlowPanel {
-        import FlowPanel._
-        import scala.swing.event._
-        implicit def taskToDisplay(ts:Iterable[Task]):Seq[DisplayTask] = ts.toList.map( new DisplayTask(_))
-        
-        val taskSelector = new ComboBox[DisplayTask]( repo.allTasks.values )
-
-        contents += taskSelector
-        contents += Button(i18n("b_start")) { start } 
-        contents += Button(i18n("b_stop"))  { val msg ="-dummy-" /*TODO: get per Dialog */; stop(msg) }
-        
-        listenTo(taskSelector.selection)
-        reactions += {
-           case SelectionChanged(`taskSelector`) => switchTo( taskSelector.selection.item.t.id )
-        }
-        def updateSelector() { taskSelector.peer.setModel(ComboBox.newConstantModel(repo.allTasks.values)) }
-    }
-
-    val mainPanel = new BorderPanel {
-        import BorderPanel._
-
-        currentPanel = clockPanel
-        add(clockPanel, Position.Center)
-        add(statusBar, Position.South)
-    }  
-
-    val mainFrame = new MainFrame() {
-        preferredSize = (600,400)
-        menuBar = new MenuBar {
-                     contents += new Menu(i18n("m_file")) {
-                       contents += new MenuItem( Action(i18n("i_open"))   { openFile() } )  
-                       contents += new MenuItem( Action(i18n("i_save"))   { saveFile() } )  
-                       contents += new MenuItem( Action(i18n("i_saveas")) { saveFileAs() } )  
-                       contents += new MenuItem( Action(i18n("i_exit")) { System.exit(0)} )  
-                     }
-                     contents += new Menu(i18n("m_edit")) {
-                       contents += new MenuItem( Action("Timed Status")      { timedStatus("Timed Status")} )  
-                       contents += new MenuItem( Action("Status")            { statusBar.status("Normal")} )  
-                       contents += new MenuItem( Action("Clear Status")      { statusBar.status("")} )  
-                     }
-                     contents += new Menu(i18n("m_view")) {
-                       contents += new MenuItem( Action("Tasks")      { println ("hello")} )  
-                       contents += new MenuItem( Action("Activities") { println ("hello")} )  
-                       contents += new MenuItem( Action("Stopwatch")  { println ("hello")} )  
-                       contents += new MenuItem( Action("DEBUG current")  { println ("File: "+currentFile+"\nTask: "+repo.currentTask+"\nActivity: "+repo.currentActivity)} )  
-                       contents += new MenuItem( Action("DEBUG task")  { repo.allTasks.foreach { println }} )  
-                       contents += new MenuItem( Action("DEBUG actions")  { repo.allActivities.foreach { println }} )  
-                       contents += new MenuItem( Action("DEBUG switch to 3")  { switchTo(3)} )  
-                     }
-                     contents += new Menu("?") {
-                       contents += new MenuItem( Action(i18n("i_about"))      { showInfo } )  
-                     }
-                  }
-//        val x = new Panel() {}
-        contents = mainPanel
-    }
-  
-    def top = mainFrame
-    
-  
-    // MENU Actions 
-
-    def showInfo() {
-        val message = """
-        |  I-do-Meter
-        |  Version: 0.1 pre-alpha
-        |  Author:  Dirk Detering
-        |  Licence: Apache Licence 2.0
-        |  Webpage: https://github.com/TheDet/idometer
-        """.stripMargin
-        Dialog.showMessage(mainPanel, message, "About", Dialog.Message.Info)
-    }
-
-    def openFile() {
-        val fc = new FileChooser()
-        val res = fc.showOpenDialog(mainPanel)
-        if (res == FileChooser.Result.Approve) {
-            currentFile = Some(fc.selectedFile.getCanonicalPath)
-            repo = new Persistence().loadRepo(currentFile.get)
-            mainFrame.title = currentFile.get
-            clockPanel.updateSelector()
-        }
-    }
-
-    def saveFile() {
-        currentFile.foreach { f=> new Persistence().saveRepo( f , repo) ; timedStatus("File saved")}
-    }
-
-    def saveFileAs() {
-        val fc = new FileChooser()
-        val res = fc.showSaveDialog(mainPanel)
-        if (res == FileChooser.Result.Approve) {
-            new Persistence().saveRepo(fc.selectedFile.getCanonicalPath, repo) ; timedStatus("File saved")
-        }
-    }
+    def top = mainController.mainFrame
     
   
     // UTILS 
     
     def timedStatus(msg:String) {
-        val timer = Timer.doOnce(4000) { statusBar.status("")}
-        statusBar.status(msg)
-        timer.start
+        mainController.status(msg)
+        Timer.doOnce(4000) { mainController.status("")}.start
     }
     
     def getTranslation(loc:Locale):Map[String,String] = {
@@ -154,20 +51,209 @@ object IdometerGui  extends SimpleSwingApplication {
           reb.keySet().map {k => (k -> reb.getString(k))}.toMap
     }
     
-    def start               { repo.startCurrent() ; repo.currentTask.foreach {t:Task => statusBar.status("Task '"+t.title+"' started at: "+Timestamp())}}
-    def stop(msg:String="") { val curname = repo.currentTask.map(_.title).getOrElse("-none-"); repo.stopCurrent(msg); statusBar.status("Task "+curname+" stopped at: "+Timestamp()) }
+    import scala.swing.event.Event
+    class Started extends Event
+    class Stopped extends Event
+}
+
+
+
+case class DisplayTask(t:Task) {
+     override def toString = ""+t.id+":"+t.title
+}
+
+
+
+class MainController extends Publisher {
+    import IdometerGui._
+    
+    var repo:Repository = new Repository()
+    var currentFile:Option[String] = None
+
+    val clock = new ClockController(this)
+    val mainFrame = new IdometerFrame(this)
+  
+
+    def start { 
+       repo.startCurrent()
+       repo.currentTask.foreach {t:Task => status("Task '"+t.title+"' started at: "+Timestamp())}
+       publish(new Started)
+     }
+
+    def stop(msg:String="") { 
+        val curname = repo.currentTask.map(_.title).getOrElse("-none-") 
+        repo.stopCurrent(msg) 
+        status("Task "+curname+" stopped at: "+Timestamp()) 
+        publish(new Stopped)
+      }
 
     def switchTo(sid:Int, msg:String="") {
-       stop(msg)
-       repo.allTasks.get(sid).foreach (repo.makeCurrent)  // hint: amap.get(key) returns Option[T]
-       statusBar.status("Current task: "+repo.currentTask.map(_.title).getOrElse("-none-")+" (stopped)")
+        stop(msg)
+        repo.allTasks.get(sid).foreach (repo.makeCurrent)  // hint: amap.get(key) returns Option[T]
+//        status("Current task: "+repo.currentTask.map(_.title).getOrElse("-none-")+" (stopped)")
    } 
 
+    def openFile() {
+        val fc = new FileChooser()
+        val res = fc.showOpenDialog(mainFrame.mainPanel)
+        if (res == FileChooser.Result.Approve) {
+            currentFile     = Some(fc.selectedFile.getCanonicalPath)
+            repo            = new Persistence().loadRepo(currentFile.get)
+            mainFrame.title = currentFile.get
+            clock.updateSelector()
+        }
+    }
+
+    def saveFile() {
+        currentFile.foreach { f=> new Persistence().saveRepo( f , repo) ; timedStatus("File saved")}
+    }
+
+    def saveFileAs() {
+        val fc = new FileChooser()
+        val res = fc.showSaveDialog(mainFrame.mainPanel)
+        if (res == FileChooser.Result.Approve) {
+            new Persistence().saveRepo(fc.selectedFile.getCanonicalPath, repo) ; timedStatus("File saved")
+        }
+    }
+    
+    def status(msg:String) { mainFrame.statusBar.status(msg)}
+
+
+    def showInfo() {
+        val message = """
+        |  I-do-Meter
+        |  Version: 0.1 pre-alpha
+        |  Author:  Dirk Detering
+        |  Licence: Apache Licence 2.0
+        |  Webpage: https://github.com/TheDet/idometer
+        """.stripMargin
+        Dialog.showMessage(mainFrame.mainPanel, message, "About", Dialog.Message.Info)
+    }
  
 }
 
 
 
+class IdometerFrame(ctrl:MainController) extends MainFrame {
+        import IdometerGui._
+        
+        val statusBar = new FlowPanel {
+            val statustext = new Label
+            contents += statustext
+
+            def status(msg:String) { statustext.text = msg}
+        }
+
+        val mainPanel = new BorderPanel {
+            import BorderPanel._
+
+            val contentPanel = new FlowPanel() { def removeAll { peer.removeAll }}
+            add(contentPanel, Position.Center)
+            add(statusBar, Position.South)
+
+//            def switchPanel(p:Panel) { contentPanel.contents.clear() ; contentPanel.contents += p}   TODO
+            contentPanel.contents += ctrl.clock.view  // how to make this exchangeable?
+        }  
+
+
+  
+        preferredSize = (600,400)
+        menuBar = new MenuBar {
+                     contents += new Menu(i18n("m_file")) {
+                       mnemonic = Key.withName(text.substring(0,1))
+                       contents += new MenuItem( Action(i18n("i_open"))   { ctrl.openFile() } )  
+                       contents += new MenuItem( Action(i18n("i_save"))   { ctrl.saveFile() } )  
+                       contents += new MenuItem( Action(i18n("i_saveas")) { ctrl.saveFileAs() } )  
+                       contents += new MenuItem( Action(i18n("i_exit"))   { System.exit(0)} )  
+                     }
+                     contents += new Menu(i18n("m_edit")) {
+                       mnemonic = Key.withName(text.substring(0,1))
+                       contents += new MenuItem( Action("Timed Status")      { timedStatus("Timed Status")} )  
+                       contents += new MenuItem( Action("Status")            { ctrl.status("Normal")} )  
+                       contents += new MenuItem( Action("Clear Status")      { ctrl.status("")} )  
+                     }
+                     contents += new Menu(i18n("m_view")) {
+                       mnemonic = Key.withName(text.substring(0,1))
+                       contents += new MenuItem( Action("Tasks")      { println ("hello")} )  
+                       contents += new MenuItem( Action("Activities") { println ("hello")} )  
+                       contents += new MenuItem( Action("Stopwatch")  { println ("hello")} )  
+                       contents += new MenuItem( Action("DEBUG current")  { println ("File: "+ctrl.currentFile+"\nTask: "+ctrl.repo.currentTask+"\nActivity: "+ctrl.repo.currentActivity)} )  
+                       contents += new MenuItem( Action("DEBUG task")     { ctrl.repo.allTasks.foreach { println }} )  
+                       contents += new MenuItem( Action("DEBUG actions")  { ctrl.repo.allActivities.foreach { println }} )  
+                       contents += new MenuItem( Action("DEBUG switch to 3")  { ctrl.switchTo(3)} )  
+                     }
+                     contents += new Menu("?") {
+                       contents += new MenuItem( Action(i18n("i_about"))      { ctrl.showInfo } )  
+                     }
+                  }
+
+      contents = mainPanel
+}
+
+
+
+
+
+
+class ClockController(main:MainController) extends Reactor {
+      import IdometerGui._
+      import scala.swing.event._
+      import javax.swing.ComboBoxModel
+      
+      implicit def taskToDisplay(ts:Iterable[Task]):Seq[DisplayTask] = ts.toList.map( new DisplayTask(_))
+
+      val view = new ClockPanel
+      val startButton  = view.startButton
+      val stopButton   = view.stopButton
+      val taskSelector = view.taskSelector
+      
+      stoppedState; startButton.enabled = false
+
+      listenTo(main)
+      reactions += {
+        case e:Started => startedState
+        case e:Stopped => stoppedState
+      }
+  
+      view.listenTo(startButton, stopButton, taskSelector.selection)
+      
+      view.reactions += {
+             case ButtonClicked(`startButton`)     => main.start//; startedState
+             case ButtonClicked(`stopButton`)      => val msg ="-dummy-" /*TODO: get per Dialog */; main.stop(msg) //; stoppedState
+             case SelectionChanged(`taskSelector`) => main.switchTo( taskSelector.selection.item.t.id )//; stoppedState 
+      }
+      
+      def updateSelector() { taskSelector.setModel(ComboBox.newConstantModel(main.repo.allTasks.values)) ; taskSelector.selection.index = 0}
+      
+      def startedState { startButton.enabled = false; stopButton.enabled = true }
+      def stoppedState { startButton.enabled = true;  stopButton.enabled = false }
+}
+
+
+class ClockPanel extends BorderPanel {
+        import javax.swing.ComboBoxModel
+        import IdometerGui._
+        import BorderPanel._
+
+        class Selector extends ComboBox[DisplayTask](List[DisplayTask]()) { 
+          def setModel(m:ComboBoxModel) { peer.setModel(m)} 
+        }
+        
+        val taskSelector = new Selector { preferredSize = (220,25)}
+        val startButton  = new Button(i18n("b_start"))
+        val stopButton   = new Button(i18n("b_stop")) 
+
+        val upperPanel = new FlowPanel{
+            import FlowPanel._
+
+            contents += new Label(i18n("l_task"))
+            contents += taskSelector
+            contents += startButton 
+            contents += stopButton
+        }
+        
+        add(upperPanel, Position.North)
+}
 
 
 
