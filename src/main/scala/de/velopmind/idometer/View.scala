@@ -68,7 +68,7 @@ class MainController extends Publisher {
 
     var config = ConfigHandler.loadConfig
 
-    val clock = new WatchController(this)
+    val watch = new WatchController(this)
     val mainFrame = new IdometerFrame(this)
   
 
@@ -88,7 +88,6 @@ class MainController extends Publisher {
     def switchTo(sid:Int, msg:String="") {
         stop(msg)
         repo.allTasks.get(sid).foreach (repo.makeCurrent)  // hint: amap.get(key) returns Option[T]
-//        status("Current task: "+repo.currentTask.map(_.title).getOrElse("-none-")+" (stopped)")
    } 
 
     def openFile() {
@@ -98,7 +97,7 @@ class MainController extends Publisher {
             currentFile     = Some(fc.selectedFile.getCanonicalPath)
             repo            = new Persistence().loadRepo(currentFile.get)
             mainFrame.title = currentFile.get
-            clock.updateSelector()
+            watch.updateSelector()
         }
     }
 
@@ -112,6 +111,13 @@ class MainController extends Publisher {
         if (res == FileChooser.Result.Approve) {
             new Persistence().saveRepo(fc.selectedFile.getCanonicalPath, repo) ; timedStatus("File saved")
         }
+    }
+
+    def createTask() {
+        val keys  = repo.allTasks.keys
+        val task = new TaskEditDialog(mainFrame, Task( if (keys.size > 0) keys.max+1 else 1, "", "", Duration(0))).apply()
+        repo.addTask(task)
+        watch.updateSelector
     }
 
     def editOptions() {
@@ -159,7 +165,7 @@ class IdometerFrame(ctrl:MainController) extends MainFrame {
             add(statusBar, Position.South)
 
 //            def switchPanel(p:Panel) { contentPanel.contents.clear() ; contentPanel.contents += p}   TODO
-            contentPanel.contents += ctrl.clock.view  // how to make this exchangeable?
+            contentPanel.contents += ctrl.watch.view  // how to make this exchangeable?
         }  
 
 
@@ -178,17 +184,17 @@ class IdometerFrame(ctrl:MainController) extends MainFrame {
                        contents += new MenuItem( Action("Timed Status")      { timedStatus("Timed Status")} )  
                        contents += new MenuItem( Action("Status")            { ctrl.status("Normal")} )  
                        contents += new MenuItem( Action("Clear Status")      { ctrl.status("")} )  
+                       contents += new MenuItem( Action(i18n("i_createtask"))   { ctrl.createTask()} )  
                        contents += new MenuItem( Action(i18n("i_options"))      { ctrl.editOptions()} )  
                      }
                      contents += new Menu(i18n("m_view")) {
                        mnemonic = Key.withName(text.substring(0,1))
                        contents += new MenuItem( Action("Tasks")      { println ("hello")} )  
                        contents += new MenuItem( Action("Activities") { println ("hello")} )  
-                       contents += new MenuItem( Action("Stopwatch")  { println ("hello")} )  
+                       contents += new MenuItem( Action("Watch")  { println ("hello")} )  
                        contents += new MenuItem( Action("DEBUG current")  { println ("File: "+ctrl.currentFile+"\nTask: "+ctrl.repo.currentTask+"\nActivity: "+ctrl.repo.currentActivity)} )  
                        contents += new MenuItem( Action("DEBUG task")     { ctrl.repo.allTasks.foreach { println }} )  
                        contents += new MenuItem( Action("DEBUG actions")  { ctrl.repo.allActivities.foreach { println }} )  
-                       contents += new MenuItem( Action("DEBUG switch to 3")  { ctrl.switchTo(3)} )  
                      }
                      contents += new Menu("?") {
                        contents += new MenuItem( Action(i18n("i_about"))      { ctrl.showInfo } )  
@@ -297,7 +303,7 @@ class WatchPanel extends BorderPanel {
 
 
 
-class OptionDialog(owner: Window, config:Map[String,String]) extends EditDialog[Map[String,String]](owner, config) {
+class TaskEditDialog(owner: Window, task:Task) extends EditDialog[Task](owner, task) {
     import IdometerGui._
     import scala.swing._
     import scala.swing.event._
@@ -307,23 +313,86 @@ class OptionDialog(owner: Window, config:Map[String,String]) extends EditDialog[
     location = (20,20)
     setLocationRelativeTo(owner)
 
+    title = i18n("t_edittask")
+    
+  
+    class ValueField(val key:String, value:String, col:Int=0) extends TextField(value, col) 
+    
+    val grid = new GridBagPanel { import GridBagPanel._
+                   val c = new Constraints
+                   
+                   val ftitle = new TextField(20)
+                   val fdescr = new TextField(20)
+                   val festim = new TextField(20)
+                   c.gridx = 0 ; c.gridy = 0            
+                   layout(new Label(i18n("l_task"))) = c  // maps to Task.title         
+                   c.gridx = 1 ; c.gridy = 0            
+                   layout(ftitle) = c           
+                   c.gridx = 0 ; c.gridy = 1            
+                   layout(new Label(i18n("l_descr"))) = c           
+                   c.gridx = 1 ; c.gridy = 1            
+                   layout(fdescr) = c           
+                   c.gridx = 0 ; c.gridy = 2            
+                   layout(new Label(i18n("l_estim"))) = c           
+                   c.gridx = 1 ; c.gridy = 2            
+                   layout(festim) = c           
+                   
+                   ftitle.text = model.title
+                   fdescr.text = model.descr
+                   festim.text = model.estimatedTime.asHours.toString
+
+                   listenTo(ftitle, fdescr, festim)
+                   reactions += {
+                     case EditDone(`ftitle`) => model = model.copy( title = ftitle.text)
+                     case EditDone(`fdescr`) => model = model.copy( descr = fdescr.text)
+                     case EditDone(`festim`) => model = model.copy( estimatedTime = Duration(festim.text.toInt * 3600000))
+                   }
+               }
+               
+     contents = grid
+}
+
+
+
+
+class OptionDialog(owner: Window, config:Map[String,String]) extends EditDialog[Map[String,String]](owner, config) {
+    import IdometerGui._
+    import scala.swing._
+    import scala.swing.event._
+
+    modal = true
+    preferredSize = (500,300)
+    location = (10,10)
+    setLocationRelativeTo(owner)
+
     title = i18n("t_options")
     
   
     class ValueField(val key:String, value:String, col:Int=0) extends TextField(value, col) 
     
-    contents = new GridPanel(0,2) {  hGap = 10; vGap = 10
-                   model.foreach{ e => 
-                     contents += new Label(e._1+": ")
-                     val inp = new ValueField(e._1, e._2, 20)
-                     listenTo(inp)
-                     contents += inp
+    val grid = new GridBagPanel { import GridBagPanel._
+                   val c = new Constraints 
+                   model.foldLeft(0) { (r,e) =>  c.gridx = 0 ; c.gridy = r
+                         layout(new Label(e._1+": ")) = c
+                         val inp = new ValueField(e._1, e._2, 20)
+                         c.gridx = 1
+                         layout(inp) = c
+                         listenTo(inp)
+                         r + 1
                    }
+                                              
                    reactions += {
                      case EditDone(field:ValueField) => model += (field.key -> field.text)
                    }
                }
+               
+     contents = new ScrollPane( grid )
 }
+
+
+
+
+
 
 
 
