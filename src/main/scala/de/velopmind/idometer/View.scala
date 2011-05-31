@@ -62,13 +62,42 @@ case class DisplayTask(t:Task) {
      override def toString = ""+t.id+":"+t.title
 }
 
+object ConfigHandler {
+    import java.io.File
+    import scala.xml._
+    
+    val home = System.getProperty("user.home")
+    val conffile = ".idometer.conf"
+    val file = new File(home+File.separator+conffile)
+  
+    def loadConfig() = {
+        if (file.canRead)  xmlToConfig( XML.loadFile(file) ) 
+        else               Map[String,String]()
+    }
+    
+    def saveConfig(config:Map[String,String]) {
+        if (file.canWrite)  XML.save(file.getCanonicalPath, configToXml(config), xmlDecl=true )
+    }
+   
+    def xmlToConfig(n:Node):Map[String,String] = 
+        (n \ "conf").foldLeft( Map[String,String]() ) { (m:Map[String,String], n:Node)  => m + ((n \ "name").text -> (n \ "value").text) }
+ 
+  
+    def configToXml(config:Map[String,String]) = 
+        <configuration>
+        {for (c <- config) yield <conf><name>{c._1}</name><value>{c._2}</value></conf>}
+        </configuration>
+}
 
 
 class MainController extends Publisher {
     import IdometerGui._
+    import scala.swing.event._
     
     var repo:Repository = new Repository()
     var currentFile:Option[String] = None
+
+    var config = ConfigHandler.loadConfig
 
     val clock = new ClockController(this)
     val mainFrame = new IdometerFrame(this)
@@ -115,9 +144,26 @@ class MainController extends Publisher {
             new Persistence().saveRepo(fc.selectedFile.getCanonicalPath, repo) ; timedStatus("File saved")
         }
     }
-    
-    def status(msg:String) { mainFrame.statusBar.status(msg)}
 
+    def editOptions() {
+        val od = new OptionDialog(mainFrame, config)
+        
+        od.listenTo(od.ok, od.cancel)
+    
+        import od._
+        od.reactions += {
+            case ButtonClicked(`ok`) => println ("OK"); od.dispose()
+            case ButtonClicked(`cancel`) => println ("Cancel"); od.dispose()
+        }
+    
+        od.visible = true
+    }
+
+    def saveConfig() { ConfigHandler.saveConfig(config) }
+
+
+  
+    def status(msg:String) { mainFrame.statusBar.status(msg)}
 
     def showInfo() {
         val message = """
@@ -171,6 +217,7 @@ class IdometerFrame(ctrl:MainController) extends MainFrame {
                        contents += new MenuItem( Action("Timed Status")      { timedStatus("Timed Status")} )  
                        contents += new MenuItem( Action("Status")            { ctrl.status("Normal")} )  
                        contents += new MenuItem( Action("Clear Status")      { ctrl.status("")} )  
+                       contents += new MenuItem( Action(i18n("i_options"))      { ctrl.editOptions()} )  
                      }
                      contents += new Menu(i18n("m_view")) {
                        mnemonic = Key.withName(text.substring(0,1))
@@ -254,6 +301,48 @@ class ClockPanel extends BorderPanel {
         
         add(upperPanel, Position.North)
 }
+
+
+
+// TODO: Very ugly construct ...
+abstract class InputDialog(owner:Window) extends Dialog(owner) {
+    import IdometerGui._
+    
+    modal = true
+
+    preferredSize = (500,300)
+    location = (20,20)
+    setLocationRelativeTo(owner)
+
+    def framePane:Component
+    
+    val ok     = new Button(i18n("b_ok"))
+    val cancel = new Button(i18n("b_cancel"))
+    val buttonBar = new FlowPanel {  contents += ok
+                                     contents += cancel } 
+    contents = new BorderPanel {
+        import BorderPanel._
+        
+        add(framePane, Position.Center)
+        add(buttonBar, Position.South)
+    }
+    
+}
+
+
+class OptionDialog(owner: Window, var config:Map[String,String]) extends InputDialog(owner) {
+    import IdometerGui._
+    
+    title = i18n("t_options")
+
+    override def framePane = new Label(config.foldLeft("") { (s,e) => s+"key: "+e._1+" value: "+e._2+"\n"})
+}
+
+//object OptionDialog {
+//  def apply(owner:Window, config:Map[String,String]):Map[String,String] = {
+//      val od = new OptionDialog(owner, config)
+//  }
+//}
 
 
 

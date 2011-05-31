@@ -40,6 +40,18 @@ CONCEPT:
   immediately when booking activities.
 
 
+
+
 STATE MACHINE:
 
 NoTask -> Task selected -> Task started -> Task stopped ->  OtherTask selected
+
+
+OPEN ISSUES/ IDEAS :
+
+- User property file in user.home  - Prop: locale
+- Option dialog
+- Reports that generate a html file and open the editor
+- Reports as Plugins, adding to menu, getting the model, Report class to provide
+  standard functionality of writing the output file and starting the browser
+- IzPack installer
