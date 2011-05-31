@@ -58,37 +58,6 @@ object IdometerGui  extends SimpleSwingApplication {
 
 
 
-case class DisplayTask(t:Task) {
-     override def toString = ""+t.id+":"+t.title
-}
-
-object ConfigHandler {
-    import java.io.File
-    import scala.xml._
-    
-    val home = System.getProperty("user.home")
-    val conffile = ".idometer.conf"
-    val file = new File(home+File.separator+conffile)
-  
-    def loadConfig() = {
-        if (file.canRead)  xmlToConfig( XML.loadFile(file) ) 
-        else               Map[String,String]()
-    }
-    
-    def saveConfig(config:Map[String,String]) {
-        if (file.canWrite)  XML.save(file.getCanonicalPath, configToXml(config), xmlDecl=true )
-    }
-   
-    def xmlToConfig(n:Node):Map[String,String] = 
-        (n \ "conf").foldLeft( Map[String,String]() ) { (m:Map[String,String], n:Node)  => m + ((n \ "name").text -> (n \ "value").text) }
- 
-  
-    def configToXml(config:Map[String,String]) = 
-        <configuration>
-        {for (c <- config) yield <conf><name>{c._1}</name><value>{c._2}</value></conf>}
-        </configuration>
-}
-
 
 class MainController extends Publisher {
     import IdometerGui._
@@ -99,7 +68,7 @@ class MainController extends Publisher {
 
     var config = ConfigHandler.loadConfig
 
-    val clock = new ClockController(this)
+    val clock = new WatchController(this)
     val mainFrame = new IdometerFrame(this)
   
 
@@ -146,17 +115,9 @@ class MainController extends Publisher {
     }
 
     def editOptions() {
+        println (config)
         val od = new OptionDialog(mainFrame, config)
-        
-        od.listenTo(od.ok, od.cancel)
-    
-        import od._
-        od.reactions += {
-            case ButtonClicked(`ok`) => println ("OK"); od.dispose()
-            case ButtonClicked(`cancel`) => println ("Cancel"); od.dispose()
-        }
-    
-        od.visible = true
+        config = od()
     }
 
     def saveConfig() { ConfigHandler.saveConfig(config) }
@@ -238,18 +199,49 @@ class IdometerFrame(ctrl:MainController) extends MainFrame {
 }
 
 
+case class DisplayTask(t:Task) {
+     override def toString = ""+t.id+":"+t.title
+}
+
+object ConfigHandler {     // TODO: Needs redesign: config has an internally known set of keys. That should be expressed in the xml
+    import java.io.File
+    import scala.xml._
+    
+    val home = System.getProperty("user.home")
+    val conffile = ".idometer.conf"
+    val file = new File(home+File.separator+conffile)
+  
+    def loadConfig() = {
+        if (file.canRead)  xmlToConfig( XML.loadFile(file) ) 
+        else               Map[String,String]()                  // EMPTY?? Or default values for the known keys??
+    }
+    
+    def saveConfig(config:Map[String,String]) {
+        if (file.canWrite)  XML.save(file.getCanonicalPath, configToXml(config), xmlDecl=true )
+    }
+   
+    def xmlToConfig(n:Node):Map[String,String] = 
+        (n \ "conf").foldLeft( Map[String,String]() ) { (m:Map[String,String], n:Node)  => m + ((n \ "name").text -> (n \ "value").text) }
+ 
+  
+    def configToXml(config:Map[String,String]) = 
+        <configuration>
+        {for (c <- config) yield <conf><name>{c._1}</name><value>{c._2}</value></conf>}
+        </configuration>
+}
 
 
 
 
-class ClockController(main:MainController) extends Reactor {
+
+class WatchController(main:MainController) extends Reactor {
       import IdometerGui._
       import scala.swing.event._
       import javax.swing.ComboBoxModel
       
       implicit def taskToDisplay(ts:Iterable[Task]):Seq[DisplayTask] = ts.toList.map( new DisplayTask(_))
 
-      val view = new ClockPanel
+      val view = new WatchPanel
       val startButton  = view.startButton
       val stopButton   = view.stopButton
       val taskSelector = view.taskSelector
@@ -277,7 +269,7 @@ class ClockController(main:MainController) extends Reactor {
 }
 
 
-class ClockPanel extends BorderPanel {
+class WatchPanel extends BorderPanel {
         import javax.swing.ComboBoxModel
         import IdometerGui._
         import BorderPanel._
@@ -304,45 +296,34 @@ class ClockPanel extends BorderPanel {
 
 
 
-// TODO: Very ugly construct ...
-abstract class InputDialog(owner:Window) extends Dialog(owner) {
-    import IdometerGui._
-    
-    modal = true
 
+class OptionDialog(owner: Window, config:Map[String,String]) extends EditDialog[Map[String,String]](owner, config) {
+    import IdometerGui._
+    import scala.swing._
+    import scala.swing.event._
+
+    modal = true
     preferredSize = (500,300)
     location = (20,20)
     setLocationRelativeTo(owner)
 
-    def framePane:Component
-    
-    val ok     = new Button(i18n("b_ok"))
-    val cancel = new Button(i18n("b_cancel"))
-    val buttonBar = new FlowPanel {  contents += ok
-                                     contents += cancel } 
-    contents = new BorderPanel {
-        import BorderPanel._
-        
-        add(framePane, Position.Center)
-        add(buttonBar, Position.South)
-    }
-    
-}
-
-
-class OptionDialog(owner: Window, var config:Map[String,String]) extends InputDialog(owner) {
-    import IdometerGui._
-    
     title = i18n("t_options")
-
-    override def framePane = new Label(config.foldLeft("") { (s,e) => s+"key: "+e._1+" value: "+e._2+"\n"})
+    
+  
+    class ValueField(val key:String, value:String, col:Int=0) extends TextField(value, col) 
+    
+    contents = new GridPanel(0,2) {  hGap = 10; vGap = 10
+                   model.foreach{ e => 
+                     contents += new Label(e._1+": ")
+                     val inp = new ValueField(e._1, e._2, 20)
+                     listenTo(inp)
+                     contents += inp
+                   }
+                   reactions += {
+                     case EditDone(field:ValueField) => model += (field.key -> field.text)
+                   }
+               }
 }
-
-//object OptionDialog {
-//  def apply(owner:Window, config:Map[String,String]):Map[String,String] = {
-//      val od = new OptionDialog(owner, config)
-//  }
-//}
 
 
 
