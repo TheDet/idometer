@@ -25,12 +25,14 @@ import de.velopmind.idometer.xml._
 
 import java.util.Locale
 
+import grizzled.slf4j.Logging
+
 
 
 
 object IdometerGui  extends SimpleSwingApplication {
     
-    var i18n = getTranslation(Locale.ENGLISH)
+    var i18n = getTranslation(Locale.GERMAN)
 
     val mainController = new MainController
     
@@ -59,7 +61,7 @@ object IdometerGui  extends SimpleSwingApplication {
 
 
 
-class MainController extends Publisher {
+class MainController extends Publisher with Logging {
     import IdometerGui._
     import scala.swing.event._
     
@@ -102,14 +104,14 @@ class MainController extends Publisher {
     }
 
     def saveFile() {
-        currentFile.foreach { f=> new Persistence().saveRepo( f , repo) ; timedStatus("File saved")}
+        currentFile.foreach { f=> new Persistence().saveRepo( f , repo) ; timedStatus(i18n("msg_filesaved").format(f)) }
     }
 
     def saveFileAs() {
         val fc = new FileChooser()
         val res = fc.showSaveDialog(mainFrame.mainPanel)
         if (res == FileChooser.Result.Approve) {
-            new Persistence().saveRepo(fc.selectedFile.getCanonicalPath, repo) ; timedStatus("File saved")
+            new Persistence().saveRepo(fc.selectedFile.getCanonicalPath, repo) ; timedStatus(i18n("msg_filesaved").format(fc.selectedFile.getName()))
         }
     }
 
@@ -120,10 +122,11 @@ class MainController extends Publisher {
         watch.updateSelector
     }
 
-    def editOptions() {
-        println (config)
+    def editConfig() {
+        debug (config)
         val od = new OptionDialog(mainFrame, config)
         config = od()
+        debug (config)
     }
 
     def saveConfig() { ConfigHandler.saveConfig(config) }
@@ -147,7 +150,7 @@ class MainController extends Publisher {
 
 
 
-class IdometerFrame(ctrl:MainController) extends MainFrame {
+class IdometerFrame(ctrl:MainController) extends MainFrame with Logging {
         import IdometerGui._
         
         val statusBar = new FlowPanel {
@@ -185,16 +188,16 @@ class IdometerFrame(ctrl:MainController) extends MainFrame {
                        contents += new MenuItem( Action("Status")            { ctrl.status("Normal")} )  
                        contents += new MenuItem( Action("Clear Status")      { ctrl.status("")} )  
                        contents += new MenuItem( Action(i18n("i_createtask"))   { ctrl.createTask()} )  
-                       contents += new MenuItem( Action(i18n("i_options"))      { ctrl.editOptions()} )  
+                       contents += new MenuItem( Action(i18n("i_options"))      { ctrl.editConfig()} )  
                      }
                      contents += new Menu(i18n("m_view")) {
                        mnemonic = Key.withName(text.substring(0,1))
-                       contents += new MenuItem( Action("Tasks")      { println ("hello")} )  
-                       contents += new MenuItem( Action("Activities") { println ("hello")} )  
-                       contents += new MenuItem( Action("Watch")  { println ("hello")} )  
-                       contents += new MenuItem( Action("DEBUG current")  { println ("File: "+ctrl.currentFile+"\nTask: "+ctrl.repo.currentTask+"\nActivity: "+ctrl.repo.currentActivity)} )  
-                       contents += new MenuItem( Action("DEBUG task")     { ctrl.repo.allTasks.foreach { println }} )  
-                       contents += new MenuItem( Action("DEBUG actions")  { ctrl.repo.allActivities.foreach { println }} )  
+                       contents += new MenuItem( Action("Tasks")      { info ("hello")} )  
+                       contents += new MenuItem( Action("Activities") { info ("hello")} )  
+                       contents += new MenuItem( Action("Watch")      { info ("hello")} )  
+                       contents += new MenuItem( Action("DEBUG current")  { info ("File: "+ctrl.currentFile+"\nTask: "+ctrl.repo.currentTask+"\nActivity: "+ctrl.repo.currentActivity)} )  
+                       contents += new MenuItem( Action("DEBUG task")     { ctrl.repo.allTasks.foreach { info (_)}} )  
+                       contents += new MenuItem( Action("DEBUG actions")  { ctrl.repo.allActivities.foreach { info(_)}} )  
                      }
                      contents += new Menu("?") {
                        contents += new MenuItem( Action(i18n("i_about"))      { ctrl.showInfo } )  
