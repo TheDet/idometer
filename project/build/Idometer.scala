@@ -82,16 +82,16 @@ class IdometerProject(info: ProjectInfo) extends DefaultProject(info) with SbtNe
 
         
         
-            val projectBootDir = path("project") / "boot" / ("scala-" + buildScalaVersion)
-            val scalaLib = Path.fromString(projectBootDir, "lib/scala-library.jar")
-            new File( scalaLib, "$INSTALL_PATH/lib")
+            val projectBootDir = "project" / "boot" / ("scala-" + buildScalaVersion)
+//            val scalaLib = Path.fromString(projectBootDir, "lib/scala-library.jar")
+//            new File( scalaLib, "$INSTALL_PATH/lib")
 
             val jars = (("lib" +++ "lib_managed") **
                         ("*.jar" - "izpack*.jar"
                                  - "scalatest*.jar"
                                  - "scala-library*.jar"
-                                 - "scala-compiler.jar")) // +++
-                        //(projectBootDir ** "scala-library.jar")
+                                 - "scala-compiler.jar"))  +++
+                        (projectBootDir ** "scala-library.jar")
             new FileSet(jars, "$INSTALL_PATH/lib")
         }
       }
