@@ -48,18 +48,22 @@ A week, a month, a release cycle, whatever.
 
 Current Status
 --------------
-Actually, it is only a first idea. A basic datamodel and the
-possibility to store and load it.
-Based on this, the next step is to put some actions around it.
-A first pre-alpha version will be Text UI based.
+The project has a first output: There is an izpack installer to install
+verion 0.0.1, which is a little test scenario.
+You can start a Swing Gui, create new Tasks, select them, and start and
+stop activities for them.
 
-Finally (perhaps in parallel), a Swing GUI will be created for the good user experience.
+The info can be stored in a file and reloaded from it for further handling.
+There is even a simple Option dialog, but without any meaning currently.
+
+So what you can do is tracking your tasks. But currently you are not able
+to get any data out of it. This is what comes next.
 
 
 Development
 -----------
 I-do-Meter is a little hobby project, written in Scala, and serves as a
 little example for a Scala tool chain.
-(SBT, ScalaTest, Netbeans7.0 Scala Plugin, sbt-netbeans-plugin, scala-swing)
+(SBT, ScalaTest, scala-swing, Netbeans7.0 Scala Plugin, sbt-netbeans-plugin, sbt-izpack-plugin)
 
  
