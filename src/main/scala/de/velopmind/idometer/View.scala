@@ -93,7 +93,7 @@ class MainController extends Publisher with Logging {
    } 
 
     def openFile() {
-        val fc = new FileChooser()
+        val fc = fileChooser
         val res = fc.showOpenDialog(mainFrame.mainPanel)
         if (res == FileChooser.Result.Approve) {
             currentFile     = Some(fc.selectedFile.getCanonicalPath)
@@ -108,7 +108,7 @@ class MainController extends Publisher with Logging {
     }
 
     def saveFileAs() {
-        val fc = new FileChooser()
+        val fc = fileChooser
         val res = fc.showSaveDialog(mainFrame.mainPanel)
         if (res == FileChooser.Result.Approve) {
             new Persistence().saveRepo(fc.selectedFile.getCanonicalPath, repo) ; timedStatus(i18n("msg_filesaved").format(fc.selectedFile.getName()))
@@ -144,6 +144,15 @@ class MainController extends Publisher with Logging {
         |  Webpage: https://github.com/TheDet/idometer
         """.stripMargin
         Dialog.showMessage(mainFrame.mainPanel, message, "About", Dialog.Message.Info)
+    }
+    
+  
+    // Helper methods
+    def fileChooser = {
+        import javax.swing.filechooser.FileNameExtensionFilter
+        val fc = new FileChooser()
+        fc.fileFilter = new FileNameExtensionFilter("I-do-Meter Files", "ido")
+        fc
     }
  
 }
