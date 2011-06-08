@@ -295,7 +295,7 @@ class WatchController(main:MainController) extends Reactor {
       
       view.reactions += {
              case ButtonClicked(`startButton`)     => main.start//; startedState
-             case ButtonClicked(`stopButton`)      => val msg ="-dummy-" /*TODO: get per Dialog */; main.stop(msg) //; stoppedState
+             case ButtonClicked(`stopButton`)      => val msg = new MessageDialog(main.mainFrame,"-dummy-")() /*TODO: get per Dialog */; main.stop(msg) //; stoppedState
              case SelectionChanged(`taskSelector`) => main.switchTo( taskSelector.selection.item.t.id )//; stoppedState 
       }
       
@@ -381,6 +381,34 @@ class TaskEditDialog(owner: Window, task:Task) extends EditDialog[Task](owner, t
                }
                
      contents = grid
+}
+
+
+class MessageDialog(owner: Window, msg:String) extends EditDialog[String](owner, msg) {
+    import IdometerGui._
+    import scala.swing._
+    import scala.swing.event._
+
+    modal = true
+    preferredSize = (500,300)
+    location = (10,10)
+    setLocationRelativeTo(owner)
+
+    title = i18n("t_message")
+    
+    contents = new FlowPanel { import GridBagPanel._
+                   //val editor = new TextArea(msg, 20,20)
+                   val editor = new TextField(msg, 20)
+
+                   contents += new Label(i18n("t_message"))
+                   contents += new ScrollPane(editor)
+                   listenTo(editor)
+                                              
+                   reactions += {
+                     case EditDone(editor:TextField) => println("edit done"); model = editor.text
+                     //case ValueChanged(editor:TextArea) => println("value changed") ; model = editor.text
+                   }
+               }
 }
 
 
