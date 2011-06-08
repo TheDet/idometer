@@ -104,7 +104,11 @@ class MainController extends Publisher with Logging {
     }
 
     def saveFile() {
-        currentFile.foreach { f=> new Persistence().saveRepo( f , repo) ; timedStatus(i18n("msg_filesaved").format(f)) }
+        currentFile match {
+          case Some(f) => new Persistence().saveRepo( f , repo) ; timedStatus(i18n("msg_filesaved").format(f))
+          case None => saveFileAs()
+        }
+
     }
 
     def saveFileAs() {
