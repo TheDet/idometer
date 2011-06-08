@@ -79,14 +79,14 @@ class MainController extends Publisher with Logging {
 
     def start { 
        repo.startCurrent()
-       repo.currentTask.foreach {t:Task => status("Task '"+t.title+"' started at: "+Timestamp())}
+       repo.currentTask.foreach {t:Task => status(i18n("msg_taskstarted").format(t.title, Timestamp()))}
        publish(new Started)
      }
 
     def stop(msg:String="") { 
         val curname = repo.currentTask.map(_.title).getOrElse("-none-") 
         repo.stopCurrent(msg) 
-        status("Task "+curname+" stopped at: "+Timestamp()) 
+        status(i18n("msg_taskstopped").format(curname, Timestamp())) 
         publish(new Stopped)
       }
 
