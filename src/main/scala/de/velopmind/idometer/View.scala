@@ -31,7 +31,9 @@ import grizzled.slf4j.Logging
 
 
 object IdometerGui  extends SimpleSwingApplication {
-    
+   
+    val FILE_EXTENSION = "ido"
+
     var i18n = getTranslation(Locale.GERMAN)
 
     val mainController = new MainController
@@ -64,6 +66,7 @@ object IdometerGui  extends SimpleSwingApplication {
 class MainController extends Publisher with Logging {
     import IdometerGui._
     import scala.swing.event._
+    import java.io.File
     
     var repo:Repository = new Repository()
     var currentFile:Option[String] = None
@@ -115,7 +118,9 @@ class MainController extends Publisher with Logging {
         val fc = fileChooser
         val res = fc.showSaveDialog(mainFrame.mainPanel)
         if (res == FileChooser.Result.Approve) {
-            new Persistence().saveRepo(fc.selectedFile.getCanonicalPath, repo) ; timedStatus(i18n("msg_filesaved").format(fc.selectedFile.getName()))
+            val fs = fileWithExtension(fc.selectedFile)
+            new Persistence().saveRepo(fs.getCanonicalPath, repo)
+            timedStatus(i18n("msg_filesaved").format(fs.getName()))
         }
     }
 
@@ -142,7 +147,7 @@ class MainController extends Publisher with Logging {
     def showInfo() {
         val message = """
         |  I-do-Meter
-        |  Version: 0.1 pre-alpha
+        |  Version: 0.0.2 pre-alpha
         |  Author:  Dirk Detering
         |  Licence: Apache Licence 2.0
         |  Webpage: https://github.com/TheDet/idometer
@@ -155,10 +160,17 @@ class MainController extends Publisher with Logging {
     def fileChooser = {
         import javax.swing.filechooser.FileNameExtensionFilter
         val fc = new FileChooser()
-        fc.fileFilter = new FileNameExtensionFilter("I-do-Meter Files", "ido")
+        fc.fileFilter = new FileNameExtensionFilter("I-do-Meter Files", FILE_EXTENSION)
         fc
     }
  
+    def fileWithExtension(f:File) = {
+        val ext = "."+FILE_EXTENSION
+        if ( ! f.getName().toLowerCase().endsWith(ext) )  
+           new File(f.getCanonicalPath + ext)
+        else
+          f
+    }
 }
 
 
