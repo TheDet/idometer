@@ -4,3 +4,4 @@ lib_managed/
 project/boot/
 /nbproject/private/
 /Testidometer.xml
+*.swp
