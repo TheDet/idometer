@@ -126,9 +126,12 @@ class MainController extends Publisher with Logging {
 
     def createTask() {
         val keys  = repo.allTasks.keys
-        val task = new TaskEditDialog(mainFrame, Task( if (keys.size > 0) keys.max+1 else 1, "", "", Duration(0))).apply()
-        repo.addTask(task)
-        watch.updateSelector
+        val ted = new TaskEditDialog(mainFrame, Task( if (keys.size > 0) keys.max+1 else 1, "", "", Duration(0)))
+        val task = ted()
+        if ( ted.result == Dialog.Result.Ok) {  // PERHAPS: Option[M] better result??
+           repo.addTask(task)
+           watch.updateSelector
+        }
     }
 
     def editConfig() {

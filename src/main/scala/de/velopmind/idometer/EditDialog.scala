@@ -52,5 +52,6 @@ abstract class EditDialog[M](owner:Window, _model:M) extends Dialog(owner) {
     def result = _result
     def get:M  = model
 
-    def apply():M = {  pack ; open ; get  }
+    def apply():M = {  pack ; open ; get  }   // TODO: In some cases this better gives 
+                                              // an Option[M], where None = Cancel | OR: Either??
 }
