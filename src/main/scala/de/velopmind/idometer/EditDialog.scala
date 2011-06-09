@@ -30,6 +30,8 @@ abstract class EditDialog[M](owner:Window, _model:M) extends Dialog(owner) {
     val cancel    = new Button(i18n("b_cancel"))
     val buttonBar = new FlowPanel {  contents += confirm
                                      contents += cancel } 
+    defaultButton = confirm
+
     val framePanel = new BorderPanel {
         import BorderPanel._
 
