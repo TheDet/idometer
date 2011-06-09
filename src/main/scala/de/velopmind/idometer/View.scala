@@ -390,23 +390,21 @@ class MessageDialog(owner: Window, msg:String) extends EditDialog[String](owner,
     import scala.swing.event._
 
     modal = true
-    preferredSize = (500,300)
+    preferredSize = (300,300)
     location = (10,10)
     setLocationRelativeTo(owner)
 
     title = i18n("t_message")
     
     contents = new FlowPanel { import GridBagPanel._
-                   //val editor = new TextArea(msg, 20,20)
-                   val editor = new TextField(msg, 20)
+                   val editor = new TextArea(msg, 12,20)
+                   //val editor = new TextField(msg, 20)
 
-                   contents += new Label(i18n("t_message"))
                    contents += new ScrollPane(editor)
                    listenTo(editor)
                                               
                    reactions += {
-                     case EditDone(editor:TextField) => println("edit done"); model = editor.text
-                     //case ValueChanged(editor:TextArea) => println("value changed") ; model = editor.text
+                     case FocusLost(editor:TextArea,_,_) => model = editor.text
                    }
                }
 }
