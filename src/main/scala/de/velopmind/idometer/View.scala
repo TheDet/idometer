@@ -180,7 +180,9 @@ class MainController extends Publisher with Logging {
 
 class IdometerFrame(ctrl:MainController) extends MainFrame with Logging {
         import IdometerGui._
-        
+      
+        title = i18n("t_unknown")
+
         val statusBar = new FlowPanel {
             val statustext = new Label
             contents += statustext
@@ -307,28 +309,28 @@ class WatchController(main:MainController) extends Reactor {
 
 
 class WatchPanel extends BorderPanel {
-        import javax.swing.ComboBoxModel
-        import IdometerGui._
-        import BorderPanel._
+      import javax.swing.ComboBoxModel
+      import IdometerGui._
+      import BorderPanel._
 
-        class Selector extends ComboBox[DisplayTask](List[DisplayTask]()) { 
-          def setModel(m:ComboBoxModel) { peer.setModel(m)} 
-        }
-        
-        val taskSelector = new Selector { preferredSize = (220,25)}
-        val startButton  = new Button(i18n("b_start"))
-        val stopButton   = new Button(i18n("b_stop")) 
+      class Selector extends ComboBox[DisplayTask](List[DisplayTask]()) { 
+        def setModel(m:ComboBoxModel) { peer.setModel(m)} 
+      }
+      
+      val taskSelector = new Selector { preferredSize = (220,25)}
+      val startButton  = new Button(i18n("b_start"))
+      val stopButton   = new Button(i18n("b_stop")) 
 
-        val upperPanel = new FlowPanel{
-            import FlowPanel._
+      val upperPanel = new FlowPanel{
+          import FlowPanel._
 
-            contents += new Label(i18n("l_task"))
-            contents += taskSelector
-            contents += startButton 
-            contents += stopButton
-        }
-        
-        add(upperPanel, Position.North)
+          contents += new Label(i18n("l_task"))
+          contents += taskSelector
+          contents += startButton 
+          contents += stopButton
+      }
+      
+      add(upperPanel, Position.North)
 }
 
 
