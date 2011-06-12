@@ -130,7 +130,7 @@ class MainController extends Publisher with Logging {
         val task = ted()
         if ( ted.result == Dialog.Result.Ok) {  // PERHAPS: Option[M] better result??
            repo.addTask(task)
-           watch.updateSelector
+           watch.updateSelector   // TODO: leads to misbehaviour - see issue #3
         }
     }
 
@@ -225,6 +225,8 @@ class IdometerFrame(ctrl:MainController) extends MainFrame with Logging {
                        contents += new MenuItem( Action("Tasks")      { info ("hello")} )  
                        contents += new MenuItem( Action("Activities") { info ("hello")} )  
                        contents += new MenuItem( Action("Watch")      { info ("hello")} )  
+                     }
+                     contents += new Menu("Debug") {
                        contents += new MenuItem( Action("DEBUG current")  { info ("File: "+ctrl.currentFile+"\nTask: "+ctrl.repo.currentTask+"\nActivity: "+ctrl.repo.currentActivity)} )  
                        contents += new MenuItem( Action("DEBUG task")     { ctrl.repo.allTasks.foreach { info (_)}} )  
                        contents += new MenuItem( Action("DEBUG actions")  { ctrl.repo.allActivities.foreach { info(_)}} )  
@@ -297,11 +299,14 @@ class WatchController(main:MainController) extends Reactor {
       
       view.reactions += {
              case ButtonClicked(`startButton`)     => main.start//; startedState
-             case ButtonClicked(`stopButton`)      => val msg = new MessageDialog(main.mainFrame,"-dummy-")() /*TODO: get per Dialog */; main.stop(msg) //; stoppedState
-             case SelectionChanged(`taskSelector`) => main.switchTo( taskSelector.selection.item.t.id )//; stoppedState 
+             case ButtonClicked(`stopButton`)      => main.stop( getMessage() ) //; stoppedState
+             case SelectionChanged(`taskSelector`) => main.switchTo( taskSelector.selection.item.t.id, getMessage() )//; stoppedState 
       }
-      
-      def updateSelector() { taskSelector.setModel(ComboBox.newConstantModel(main.repo.allTasks.values)) ; taskSelector.selection.index = 0}
+     
+      def getMessage() = new MessageDialog(main.mainFrame,"")()
+      def updateSelector() { taskSelector.setModel(ComboBox.newConstantModel(main.repo.allTasks.values))
+                             taskSelector.selection.index = 0  // TODO: Leads to misbehaviour - see issue #3
+      }
       
       def startedState { startButton.enabled = false; stopButton.enabled = true }
       def stoppedState { startButton.enabled = true;  stopButton.enabled = false }
