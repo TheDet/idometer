@@ -42,11 +42,22 @@ abstract class EditDialog[M](owner:Window, _model:M) extends Dialog(owner) {
     
     super.contents = framePanel
 
-    listenTo(confirm, cancel)
-    
+    listenTo(confirm, cancel, framePanel.keys)
+
     reactions += {
-      case ButtonClicked(`confirm`) => _result = Result.Ok     ; dispose()
-      case ButtonClicked(`cancel`)  => _result = Result.Cancel ; model = _model; dispose()
+      case ButtonClicked(`confirm`) => okAction()
+      case ButtonClicked(`cancel`)  => cancelAction()
+    }
+
+    def okAction() {
+        _result = Result.Ok
+        dispose()
+    }
+
+    def cancelAction() {
+        _result = Result.Cancel
+        model = _model
+        dispose()
     }
 
     override def contents_=(c:Component) {  framePanel.addContent(c)  } 
