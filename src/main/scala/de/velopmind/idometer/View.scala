@@ -214,9 +214,6 @@ class IdometerFrame(ctrl:MainController) extends MainFrame with Logging {
                      }
                      contents += new Menu(i18n("m_edit")) {
                        mnemonic = Key.withName(text.substring(0,1))
-                       contents += new MenuItem( Action("Timed Status")      { timedStatus("Timed Status")} )  
-                       contents += new MenuItem( Action("Status")            { ctrl.status("Normal")} )  
-                       contents += new MenuItem( Action("Clear Status")      { ctrl.status("")} )  
                        contents += new MenuItem( Action(i18n("i_createtask"))   { ctrl.createTask()} )  
                        contents += new MenuItem( Action(i18n("i_options"))      { ctrl.editConfig()} )  
                      }
@@ -227,9 +224,12 @@ class IdometerFrame(ctrl:MainController) extends MainFrame with Logging {
                        contents += new MenuItem( Action("Watch")      { info ("hello")} )  
                      }
                      contents += new Menu("Debug") {
-                       contents += new MenuItem( Action("DEBUG current")  { info ("File: "+ctrl.currentFile+"\nTask: "+ctrl.repo.currentTask+"\nActivity: "+ctrl.repo.currentActivity)} )  
-                       contents += new MenuItem( Action("DEBUG task")     { ctrl.repo.allTasks.foreach { info (_)}} )  
-                       contents += new MenuItem( Action("DEBUG actions")  { ctrl.repo.allActivities.foreach { info(_)}} )  
+                       contents += new MenuItem( Action("Show current")   { info ("File: "+ctrl.currentFile+"\nTask: "+ctrl.repo.currentTask+"\nActivity: "+ctrl.repo.currentActivity)} )  
+                       contents += new MenuItem( Action("Show tasks")     { ctrl.repo.allTasks.foreach { info (_)}} )  
+                       contents += new MenuItem( Action("Show actions")   { ctrl.repo.allActivities.foreach { info(_)}} )  
+                       contents += new MenuItem( Action("Timed Status")   { timedStatus("Timed Status")} )  
+                       contents += new MenuItem( Action("Status")         { ctrl.status("Normal")} )  
+                       contents += new MenuItem( Action("Clear Status")   { ctrl.status("")} )  
                      }
                      contents += new Menu("?") {
                        contents += new MenuItem( Action(i18n("i_about"))      { ctrl.showInfo } )  
@@ -303,9 +303,14 @@ class WatchController(main:MainController) extends Reactor {
              case SelectionChanged(`taskSelector`) => main.switchTo( taskSelector.selection.item.t.id, getMessage() )//; stoppedState 
       }
      
-      def getMessage() = new MessageDialog(main.mainFrame,"")()
-      def updateSelector() { taskSelector.setModel(ComboBox.newConstantModel(main.repo.allTasks.values))
-                             taskSelector.selection.index = 0  // TODO: Leads to misbehaviour - see issue #3
+      def getMessage() = main.repo.currentActivity.map ( x => new MessageDialog(main.mainFrame,"")() ).getOrElse("")  //if currentActivity exists, ask for message
+
+      def updateSelector() {
+          val sel = taskSelector.selection.index
+          if (sel >= 0) view.deafTo(taskSelector.selection)       // if sel >=0 then there existed a previous task. Those selection shall not change, so deafTo event.
+          taskSelector.setModel(ComboBox.newConstantModel(main.repo.allTasks.values))
+          taskSelector.selection.index = if (sel < 0) 0 else sel  // restore selection. If nothing was selected before, select the first entry - see issue #3
+          view.listenTo(taskSelector.selection)
       }
       
       def startedState { startButton.enabled = false; stopButton.enabled = true }
