@@ -49,7 +49,7 @@ A week, a month, a release cycle, whatever.
 Current Status
 --------------
 The project has a first output: There is an izpack installer to install
-verion 0.0.1, which is a little test scenario.
+version 0.0.3, which is a little test scenario.
 You can start a Swing Gui, create new Tasks, select them, and start and
 stop activities for them.
 
