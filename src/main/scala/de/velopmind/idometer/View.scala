@@ -150,7 +150,7 @@ class MainController extends Publisher with Logging {
     def showInfo() {
         val message = """
         |  I-do-Meter
-        |  Version: 0.0.2 pre-alpha
+        |  Version: 0.0.3 pre-alpha
         |  Author:  Dirk Detering
         |  Licence: Apache Licence 2.0
         |  Webpage: https://github.com/TheDet/idometer
